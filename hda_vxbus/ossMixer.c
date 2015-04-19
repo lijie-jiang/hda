@@ -15,24 +15,21 @@ modification history
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
-#include <hwif/vxbus/vxBus.h>
 #include <drv/sound/soundcard.h>
-
-#include "audio/ossAudio.h"
-
 #include <selectLib.h>
 #include <lstLib.h>
 #include <logLib.h>
+
+#include "audio/ossAudio.h"
 
 #define OSS_DEBUG
 
 LOCAL int ossMixerDrvNum = -1;
 
-DEVMETHOD_DEF(mixer_init,       "mixer_init");
-DEVMETHOD_DEF(mixer_set,        "mixer_set");
-DEVMETHOD_DEF(mixer_setrecsrc,  "mixer_setrecsrc");
-
+/* import */
+IMPORT int audio_ctl_ossmixer_init(SND_MIXER *m);
+IMPORT UINT32 audio_ctl_ossmixer_setrecsrc(SND_MIXER *m, UINT32 src);
+IMPORT int audio_ctl_ossmixer_set(SND_MIXER *m, unsigned dev, unsigned left, unsigned right);
 
 LOCAL void *  ossMixerOpen (DEV_HDR * pDevHdr, const char * fileName, int flags, int mode);
 LOCAL int     ossMixerClose (void * pFileDesc);
@@ -40,6 +37,7 @@ LOCAL int     ossMixerIoctl (void * pFileDesc, UINT32 function,  _Vx_ioctl_arg_t
 
 LOCAL STATUS ossMixerFreeFd(MIXER_DEV *pDspDev, MIXER_FD *pFd);
 LOCAL MIXER_FD * ossMixerAllocFd(MIXER_DEV *pDspDev, int flags);
+
 
 STATUS ossMixerInit ()
     {
@@ -63,7 +61,7 @@ void ossDeleteMixer (MIXER_DEV* pMixerDev)
     free (pMixerDev);
     }
 
-MIXER_DEV * ossCreateMixer (VXB_DEVICE_ID pDev)
+MIXER_DEV * ossCreateMixer (void)
     {
     MIXER_DEV* pMixerDev;
     char path[64];
@@ -77,7 +75,6 @@ MIXER_DEV * ossCreateMixer (VXB_DEVICE_ID pDev)
 
     pMixerDev = calloc(1, sizeof(MIXER_DEV));
     pMixerDev->mutex = semMCreate (SEM_Q_FIFO);
-    pMixerDev->pDev = pDev;
 
     lstInit (&pMixerDev->fdList);
              
@@ -92,20 +89,15 @@ int ossmixer_delete (struct snd_mixer *m)
     return 0;
     }
 
-STATUS ossmixer_init (VXB_DEVICE_ID pDev, MIXER_DEV * pMixerDev, void *pdevinfo)
+STATUS ossmixer_init (MIXER_DEV * pMixerDev, void *pdevinfo)
     {
     struct snd_mixer *m;
 
     m = calloc (1, sizeof(struct snd_mixer));
     m->pdevinfo = pdevinfo;
-    m->pDev = pDev;
 
     pMixerDev->mixer = m;
-    
-    if (METHOD_CALL(pDev, mixer_init, m) != OK)
-        {
-        return ERROR;
-        }
+    audio_ctl_ossmixer_init(m);
 
     return OK;
     }
@@ -114,8 +106,7 @@ int ossmixer_setrecsrc (SND_MIXER *m, unsigned int src)
     {
     unsigned int recsrc;
 
-    recsrc = METHOD_CALL(m->pDev, mixer_setrecsrc, m, src);
-
+    recsrc = audio_ctl_ossmixer_setrecsrc(m, src);
     if (recsrc > 0)
         m->recsrc = recsrc;
 
@@ -129,8 +120,7 @@ int ossmixer_set (SND_MIXER *m, unsigned int dev, unsigned int level)
     right = (level >> 8) & 0xff;
     left = (level & 0xff);
 
-    level = METHOD_CALL(m->pDev, mixer_set, m, dev, left, right);
-
+    level = audio_ctl_ossmixer_set(m, dev, left, right);
     m->level[dev] = level;
 
     return level;

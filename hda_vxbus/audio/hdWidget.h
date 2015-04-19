@@ -26,8 +26,8 @@
  * $FreeBSD: src/sys/dev/sound/pci/hda/hda_reg.h,v 1.6 2012/01/18 19:12:33 mav Exp $
  */
 
-#ifndef _HDA_REG_H_
-#define _HDA_REG_H_
+#ifndef __INChdWidgeth
+#define __INChdWidgeth
 
 /****************************************************************************
  * HDA Device Verbs
@@ -1364,4 +1364,4 @@
 #define HDA_CONFIG_DEFAULTCONF_DEVICE_DIGITAL_OTHER_IN		(13<<20)
 #define HDA_CONFIG_DEFAULTCONF_DEVICE_OTHER			(15<<20)
 
-#endif
+#endif /* __INChdWidgeth */

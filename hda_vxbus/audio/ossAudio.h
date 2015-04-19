@@ -18,7 +18,7 @@ modification history
 #include <selectLib.h>
 #include <drv/sound/soundcard.h>
 
-#include <hwif/util/vxbDmaBufLib.h>
+#include "dmaBufLib.h"
 
 /* device driver prototype */
 
@@ -36,7 +36,6 @@ struct snd_mixer;
 
 typedef struct snd_mixer
     {
-    VXB_DEVICE_ID       pDev;
     void *              pdevinfo;
     UINT32              devs;
     UINT32              recdevs;
@@ -50,7 +49,6 @@ struct snd_buf;
 
 typedef struct snd_buf
     {
-    VXB_DEVICE_ID       dev;
     UINT32              bufsize;
     UINT32              maxsize;
     UINT32              blksz;
@@ -95,7 +93,6 @@ typedef struct pcmchan_caps
 
 typedef struct pcm_channel
     {
-    VXB_DEVICE_ID       pDev;
     int                 refcount;
     int                 dir;
     int                 channels; /* selected number of audio channels */
@@ -128,7 +125,6 @@ typedef struct mixer_t
     DEV_HDR             devHdr;
     SEM_ID              mutex;
     LIST                fdList;
-    VXB_DEVICE_ID       pDev;
     int                 num_chan;
     SND_MIXER *         mixer;
     } MIXER_DEV;
@@ -138,7 +134,6 @@ typedef struct dsp_t
     DEV_HDR             devHdr;
     SEM_ID              mutex;
     LIST                fdList;
-    VXB_DEVICE_ID       pDev;
     int                 num_chan;
     PCM_CHANNEL *       channel;
     SEL_WAKEUP_LIST     selWakeupList;	/* list of tasks pended in select */
@@ -161,30 +156,14 @@ typedef struct mixer_fd
     } MIXER_FD;
 
 
-METHOD_DECL(pcm_channel_init);
-METHOD_DECL(pcm_channel_setformat);
-METHOD_DECL(pcm_channel_setspeed);
-METHOD_DECL(pcm_channel_setfragments);
-METHOD_DECL(pcm_channel_stop);
-METHOD_DECL(pcm_channel_trigger);
-METHOD_DECL(pcm_channel_getptr);
-METHOD_DECL(pcm_channel_getcaps);
-
-METHOD_DECL(mixer_init);
-METHOD_DECL(mixer_set);
-METHOD_DECL(mixer_setrecsrc);
-
-#define METHOD_CALL(dev, name, ...)                                \
-    vxbDevMethodGet((VXB_DEVICE_ID)dev, VXB_DRIVER_METHOD(name))(__VA_ARGS__)
-
-extern MIXER_DEV* ossCreateMixer (VXB_DEVICE_ID pDev);
-extern DSP_DEV* ossCreateDsp (VXB_DEVICE_ID pDev);
+extern MIXER_DEV* ossCreateMixer (void);
+extern DSP_DEV* ossCreateDsp (void);
 extern void ossDeleteMixer (MIXER_DEV*);
 extern void ossDeleteDsp (DSP_DEV* pDspDev);
 
-extern STATUS osschannel_init (VXB_DEVICE_ID pDev, DSP_DEV * pDspDev, int dir, void * devinfo);
+extern STATUS osschannel_init (DSP_DEV * pDspDev, int dir, void * devinfo);
 extern void osschannel_intr (PCM_CHANNEL* pChan);
-extern STATUS ossmixer_init (VXB_DEVICE_ID pDev, MIXER_DEV * pMixerDev, void *devinfo);
+extern STATUS ossmixer_init (MIXER_DEV * pMixerDev, void *devinfo);
 extern int ossmixer_delete (struct snd_mixer *m);
 extern int ossmixer_setrecsrc (SND_MIXER *m, unsigned int src);
 extern int ossmixer_set (SND_MIXER *m, unsigned int dev, unsigned int level);
@@ -192,7 +171,7 @@ extern int ossmixer_get (SND_MIXER *m, unsigned int dev);
 
 extern STATUS sndbuf_alloc (SND_BUF *b, VXB_DMA_TAG_ID dmatag, int dmaflags, unsigned int size);
 extern STATUS sndbuf_resize(SND_BUF *b, unsigned int blkcnt, unsigned int blksz);
-extern SND_BUF* sndbuf_create(VXB_DEVICE_ID dev, struct pcm_channel *channel);
+extern SND_BUF* sndbuf_create(struct pcm_channel *channel);
 extern void sndbuf_destroy(SND_BUF *b);
 extern size_t sndbuf_copy (const char *source, SND_BUF * b, size_t nbytes);
 extern size_t sndbuf_read (char *dest, SND_BUF * b, size_t nbytes);

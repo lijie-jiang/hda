@@ -1,4 +1,4 @@
-/* vxbHdAudio.h - HD Audio driver header */
+/* hdAudio.h - HD Audio driver header */
 
 /*
  * Copyright (c) 2012 Wind River Systems, Inc.
@@ -14,8 +14,8 @@ modification history
 01a,20jan12,gkw  written.
 */
 
-#ifndef __INCvxbHdAudioh
-#define __INCvxbHdAudioh
+#ifndef __INChdAudioh
+#define __INChdAudioh
 
 extern void vxbHdAudioRegister (void);
 
@@ -68,7 +68,6 @@ typedef struct hdcodec_t* HDCODEC_ID;
 
 typedef struct vxbHdaMsg
     {
-    VXB_DEVICE_ID       pDev;
     int                 type;
     } VXB_HDA_MSG;
 
@@ -88,7 +87,6 @@ typedef struct dma_object_t {
 
 typedef struct pcm_devinfo_t
     {
-    VXB_DEVICE_ID       pDev;
     HDCODEC_ID          codec;
     DSP_DEV             *pDspDev;
     MIXER_DEV           *pMixerDev;
@@ -192,7 +190,6 @@ typedef struct widget_t
     nid_t               nid;
     int                 type;
 
-    VXB_DEVICE_ID       pDev;
     HDCODEC_ID          codec;
     int                 enable;
     int                 bindas;
@@ -235,7 +232,6 @@ typedef struct widget_t
 
 typedef struct hdcodec_t
     {
-    VXB_DEVICE_ID       pDev;
     UINT16              vendor_id;
     UINT16              device_id;
     UINT8               revision_id;
@@ -286,9 +282,9 @@ typedef struct stream_t
 
 typedef struct hdaDrvCtrl
     {
-    VXB_DEVICE_ID       pDev;
     void *              regBase;
-    void *              regHandle;
+    int                 intLvl;
+    VOIDFUNCPTR *       intVector;
     SEM_ID              mutex;
 
 /*
@@ -335,8 +331,8 @@ typedef struct hdaDrvCtrl
     VXB_DMA_TAG_ID      parentTag;
     } HDA_DRV_CTRL;
 
-#define device_get_softc(dev)   ((dev)->pDrvCtrl)
-#define device_get_codec(dev, cad) (((HDA_DRV_CTRL*)pDev->pDrvCtrl)->codec_table[(int)cad])
+#define device_get_softc()   gHdaDrvCtrl
+#define device_get_codec(pDrvCtrl, cad) (pDrvCtrl->codec_table[(int)cad])
 
 
 /* HDA driver name */
@@ -359,7 +355,6 @@ typedef struct hdaDrvCtrl
 #define HDA_MON_DELAY_SECS    2
 
 #define HDA_BAR(p)         ((HDA_DRV_CTRL *)(p)->pDrvCtrl)->regBase
-#define HDA_HANDLE(p)      ((HDA_DRV_CTRL *)(p)->pDrvCtrl)->regHandle
 
 /*
  * Yuk.  This should be done in a more portable manner.
@@ -715,5 +710,5 @@ typedef struct hdaDrvCtrl
 #define HDAC_SDSTS_BCIS         (1 << 2)
 
 
-#endif /* __INCvxbHdAudioh */
+#endif /* __INChdAudioh */
 

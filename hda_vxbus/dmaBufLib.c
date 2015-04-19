@@ -154,10 +154,7 @@ INCLUDE FILES: vxbDmaBufLib.h
 #include <net/uio.h>
 #include <netBufLib.h>
 
-#include <vxBusLib.h>
-#include <hwif/vxbus/vxBus.h>
-
-#include "vxbDmaBufLib.h"
+#include "audio/dmaBufLib.h"
 
 /* defines */
 
@@ -180,12 +177,10 @@ INCLUDE FILES: vxbDmaBufLib.h
 
 void * (*vxbDmaBufBspAlloc)
     (
-    VXB_DEVICE_ID	pInst,
     int			size
     ) = NULL;
 STATUS (*vxbDmaBufBspFree)
     (
-    VXB_DEVICE_ID	pInst,
     void *		vaddr
     ) = NULL;
 
@@ -193,7 +188,6 @@ STATUS (*vxbDmaBufBspFree)
 
 STATUS (*vxbDmaBufArchInvalidate)
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     int			index,
@@ -202,7 +196,6 @@ STATUS (*vxbDmaBufArchInvalidate)
     ) = NULL;
 STATUS (*vxbDmaBufArchFlush)
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     int			index,
@@ -211,13 +204,11 @@ STATUS (*vxbDmaBufArchFlush)
     ) = NULL;
 STATUS (*vxbDmaBufMapArchInvalidate)
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID	dmaTagID,
     VXB_DMA_MAP_ID	map
     ) = NULL;
 STATUS (*vxbDmaBufMapArchFlush)
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID	dmaTagID,
     VXB_DMA_MAP_ID	map
     ) = NULL;
@@ -225,8 +216,6 @@ STATUS (*vxbDmaBufMapArchFlush)
 /* locals */
 
 /* forward declarations */
-
-IMPORT VXB_DEVICE_ID vxbParentGet(VXB_DEVICE_ID pInst);
 
 #if 0
 /*******************************************************************************
@@ -278,7 +267,6 @@ LOCAL void vxbDmaBufDefaultLock
 
 VXB_DMA_TAG_ID vxbDmaBufTagParentGet
     (
-    VXB_DEVICE_ID	pInst,
     UINT32 		pRegBaseIndex
     )
     {
@@ -339,7 +327,6 @@ VXB_DMA_TAG_ID vxbDmaBufTagParentGet
 
 VXB_DMA_TAG_ID vxbDmaBufTagCreate
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID	parent,
     bus_size_t		alignment,
     bus_size_t		boundary,
@@ -514,7 +501,6 @@ STATUS vxbDmaBufTagDestroy
 
 VXB_DMA_MAP_ID vxbDmaBufMapCreate
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     int 		flags,
     VXB_DMA_MAP_ID *	mapp
@@ -669,7 +655,6 @@ STATUS vxbDmaBufMapDestroy
 
 void * vxbDmaBufMemAlloc
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     void ** 		vaddr,
     int 		flags,
@@ -696,7 +681,7 @@ void * vxbDmaBufMemAlloc
     else
         size = dmaTagID->maxSize;
 
-    map = vxbDmaBufMapCreate(pInst, dmaTagID, flags, pMap);
+    map = vxbDmaBufMapCreate(dmaTagID, flags, pMap);
     if ( map == NULL )
         return(NULL);
 #if 0
@@ -827,7 +812,6 @@ STATUS vxbDmaBufMemFree
 
 STATUS vxbDmaBufMapLoad
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     void *		buf,
@@ -902,7 +886,6 @@ STATUS vxbDmaBufMapLoad
 
 STATUS vxbDmaBufMapMblkLoad
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     M_BLK_ID		pMblk,
@@ -913,14 +896,14 @@ STATUS vxbDmaBufMapMblkLoad
     int		nSegs;
     bus_size_t	bmask;
 
-#ifdef VXB_DMA_BUF_DEBUG_CHECKS
+#if 1 /*def VXB_DMA_BUF_DEBUG_CHECKS*/
     /* check if the parameters are valid */
 
-    if ( ( pInst == NULL ) || ( pInst->pDriver == NULL ) || 
-         ( dmaTagID == NULL ) || ( map == NULL ) || ( pMblk == NULL ) )
+    if (( dmaTagID == NULL ) || ( map == NULL ) || ( pMblk == NULL ) )
         return ERROR;
 #endif
 
+#if 0
     /*
      * See if the parent bus has a mapping routine. If
      * it does, call it, otherwise just use a generic default.
@@ -929,6 +912,7 @@ STATUS vxbDmaBufMapMblkLoad
     if (map->mapLoadMblkFunc != NULL)
         return ((map->mapLoadMblkFunc) (map->pParent, dmaTagID,
             map, pMblk, flags));
+#endif
 
     bmask = ~(dmaTagID->boundary - 1);
 
@@ -938,7 +922,7 @@ STATUS vxbDmaBufMapMblkLoad
 #else	/* VXB_DMA_BUF_DEBUG_CHECKS */
 	 pFrag != NULL ;
 #endif	/* VXB_DMA_BUF_DEBUG_CHECKS */
-         pFrag = pFrag->mBlkHdr.mNext)
+        pFrag = pFrag->mBlkHdr.mNext)
         {
         bus_size_t segSize;
         bus_size_t bCur;
@@ -1008,7 +992,6 @@ STATUS vxbDmaBufMapMblkLoad
 
 STATUS vxbDmaBufMapIoVecLoad
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     struct uio *	uio,
@@ -1020,17 +1003,17 @@ STATUS vxbDmaBufMapIoVecLoad
     STATUS		retVal = OK;
     bus_size_t		bmask;
 
-#ifdef VXB_DMA_BUF_DEBUG_CHECKS
+#if 1 /*def VXB_DMA_BUF_DEBUG_CHECKS*/
     /* check if the parameters are valid */
 
-    if ( ( pInst == NULL ) || ( pInst->pDriver == NULL ) || 
-         ( dmaTagID == NULL ) || ( map == NULL ) || ( uio == NULL ) )
+    if ( ( dmaTagID == NULL ) || ( map == NULL ) || ( uio == NULL ) )
         return ERROR;
 #endif
 
     if ( uio->uio_iovcnt > dmaTagID->nSegments )
         return(ERROR);
 
+#if 0
     /*
      * See if the parent bus has a mapping routine. If
      * it does, call it, otherwise just use a generic default.
@@ -1039,6 +1022,7 @@ STATUS vxbDmaBufMapIoVecLoad
     if (map->mapLoadIoVecFunc != NULL)
         return ((map->mapLoadIoVecFunc) (map->pParent, dmaTagID,
             map, uio, flags));
+#endif
 
     uiovec = uio->uio_iov;
     bmask = ~(dmaTagID->boundary - 1);
@@ -1122,6 +1106,7 @@ STATUS vxbDmaBufMapUnload
         return ERROR;
 #endif
 
+#if 0
     /*
      * See if the parent bus has a mapping routine. If
      * it does, call it, otherwise just use a generic default.
@@ -1129,6 +1114,7 @@ STATUS vxbDmaBufMapUnload
 
     if (map->mapUnloadFunc != NULL)
         return ((map->mapUnloadFunc) (map->pParent, dmaTagID, map));
+#endif
 
     for (i = 0; i < dmaTagID->nSegments; i++)
         {
@@ -1152,7 +1138,6 @@ STATUS vxbDmaBufMapUnload
 
 STATUS vxbDmaBufMapFlush
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map
     )
@@ -1200,7 +1185,6 @@ STATUS vxbDmaBufMapFlush
 
 STATUS vxbDmaBufMapInvalidate
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map
     )
@@ -1249,7 +1233,6 @@ STATUS vxbDmaBufMapInvalidate
 
 STATUS vxbDmaBufFlush
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     int			index,
@@ -1300,7 +1283,6 @@ STATUS vxbDmaBufFlush
 
 STATUS vxbDmaBufInvalidate
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     int			index,
@@ -1353,7 +1335,6 @@ STATUS vxbDmaBufInvalidate
 
 STATUS vxbDmaBufSync
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     bus_dmasync_op_t 	op

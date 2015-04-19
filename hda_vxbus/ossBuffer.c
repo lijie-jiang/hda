@@ -27,10 +27,8 @@ modification history
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <hwif/vxbus/vxBus.h>
-#include <hwif/util/vxbParamSys.h>
-#include <hwif/util/vxbDmaBufLib.h>
 
+#include "audio/dmaBufLib.h"
 #include "audio/ossAudio.h"
 
 STATUS sndbuf_alloc (SND_BUF *b, VXB_DMA_TAG_ID dmatag, int dmaflags, unsigned int size)
@@ -43,15 +41,13 @@ STATUS sndbuf_alloc (SND_BUF *b, VXB_DMA_TAG_ID dmatag, int dmaflags, unsigned i
     b->head = 0;
     b->tail = 0;
 
-    if ((b->buf_addr = vxbDmaBufMemAlloc (b->dev,
-                           b->dma_tag,
+    if ((b->buf_addr = vxbDmaBufMemAlloc (b->dma_tag,
                            NULL,
                            b->dma_flags,
                            &b->dma_map)) == NULL)
         return status;
 
-    if (vxbDmaBufMapLoad(b->dev,
-                         b->dma_tag,
+    if (vxbDmaBufMapLoad(b->dma_tag,
                          b->dma_map,
                          b->buf_addr,
                          b->bufsize, 0) == ERROR)
@@ -73,12 +69,11 @@ STATUS sndbuf_alloc (SND_BUF *b, VXB_DMA_TAG_ID dmatag, int dmaflags, unsigned i
     return status;
     }
                     
-SND_BUF * sndbuf_create(VXB_DEVICE_ID dev, struct pcm_channel *channel)
+SND_BUF * sndbuf_create(struct pcm_channel *channel)
     {
 	struct snd_buf *b;
     
 	b = calloc(1, sizeof(*b));
-	b->dev = dev;
 	b->channel = channel;
 	return b;
     }

@@ -10,21 +10,13 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
-#include <hwif/vxbus/vxBus.h>
-#include <hwif/vxbus/hwConf.h>
-#include <hwif/util/vxbParamSys.h>
-#include <hwif/util/vxbDmaBufLib.h>
-
-#include <hwif/vxbus/vxbPciLib.h>
-#include <hwif/vxbus/hwConf.h>
 #include <drv/pci/pciConfigLib.h>
 #include <drv/pci/pciIntLib.h>
 
-#include <vxbus/vxbAccess.h>
-
 #include "audio/ossAudio.h"
-#include "audio/vxbHdAudio.h"
-#include "audio/vxbHdWidget.h"
+#include "audio/hdAudio.h"
+#include "audio/hdWidget.h"
+#include "audio/dmaBufLib.h"
 
 #include <ffsLib.h>
 
@@ -159,7 +151,7 @@ LOCAL void hdaa_dump_ctls(PCM_DEVINFO *pdevinfo, const char *banner, UINT32 flag
 	}
 }
 
-LOCAL void hdaa_dump_audio_formats(VXB_DEVICE_ID dev, UINT32 fcap, UINT32 pcmcap)
+LOCAL void hdaa_dump_audio_formats(UINT32 fcap, UINT32 pcmcap)
 {
 	UINT32 cap;
 
@@ -324,7 +316,7 @@ LOCAL void hdaa_dump_pin_configs (HDCODEC* codec)
 	}
 }
 
-LOCAL void hdaa_dump_amp (VXB_DEVICE_ID dev, UINT32 cap, char *banner)
+LOCAL void hdaa_dump_amp (UINT32 cap, char *banner)
 {
 	HDA_DBG(HDA_DBG_INFO, "     %s amp: 0x%08x\n", banner, cap);
 	HDA_DBG(HDA_DBG_INFO, "                 "
@@ -344,8 +336,7 @@ LOCAL void hdaa_dump_nodes (HDCODEC* codec)
 	HDA_DBG(HDA_DBG_INFO, "\n");
 	HDA_DBG(HDA_DBG_INFO, "Default Parameter\n");
 	HDA_DBG(HDA_DBG_INFO, "-----------------\n");
-	hdaa_dump_audio_formats(codec->pDev,
-                            codec->supp_stream_formats,
+	hdaa_dump_audio_formats(codec->supp_stream_formats,
                             codec->supp_pcm_size_rate);
 	HDA_DBG(HDA_DBG_INFO, "         IN amp: 0x%08x\n",
 	    codec->inamp_cap);
@@ -404,8 +395,7 @@ printf("nid(10): ossmask= %d, ossdev= %d\n", w->ossmask, w->ossdev);
 		}
 		if (w->type == HDA_PARAM_AUDIO_WIDGET_CAP_TYPE_AUDIO_OUTPUT ||
 		    w->type == HDA_PARAM_AUDIO_WIDGET_CAP_TYPE_AUDIO_INPUT) {
-            hdaa_dump_audio_formats(codec->pDev,
-			    w->param.supp_stream_formats,
+            hdaa_dump_audio_formats(w->param.supp_stream_formats,
 			    w->param.supp_pcm_size_rate);
 		} else if (w->type ==
 		    HDA_PARAM_AUDIO_WIDGET_CAP_TYPE_PIN_COMPLEX || w->waspin)
@@ -415,10 +405,10 @@ printf("nid(10): ossmask= %d, ossdev= %d\n", w->ossmask, w->ossdev);
 			    w->param.eapdbtl);
 		if (HDA_PARAM_AUDIO_WIDGET_CAP_OUT_AMP(w->param.widget_cap) &&
 		    w->param.outamp_cap != 0)
-			hdaa_dump_amp(codec->pDev, w->param.outamp_cap, "Output");
+			hdaa_dump_amp(w->param.outamp_cap, "Output");
 		if (HDA_PARAM_AUDIO_WIDGET_CAP_IN_AMP(w->param.widget_cap) &&
 		    w->param.inamp_cap != 0)
-			hdaa_dump_amp(codec->pDev, w->param.inamp_cap, " Input");
+			hdaa_dump_amp(w->param.inamp_cap, " Input");
 		if (w->nconns > 0) {
 			HDA_DBG(HDA_DBG_INFO, "    connections: %d\n", w->nconns);
 			HDA_DBG(HDA_DBG_INFO, "          |\n");
@@ -590,7 +580,7 @@ LOCAL void hdaa_dump_pcmchannels(PCM_DEVINFO *pdevinfo)
 		HDA_DBG(HDA_DBG_INFO, "Playback:\n");
 		HDA_DBG(HDA_DBG_INFO, "\n");
 		chid = codec->assoc_table[pdevinfo->playas].chans[0];
-		hdaa_dump_audio_formats(pdevinfo->pDev,
+		hdaa_dump_audio_formats(
 		    codec->hdaa_chan_table[chid].supp_stream_formats,
 		    codec->hdaa_chan_table[chid].supp_pcm_size_rate);
 		for (i = 0; i < codec->assoc_table[pdevinfo->playas].num_chans; i++) {
@@ -606,7 +596,7 @@ LOCAL void hdaa_dump_pcmchannels(PCM_DEVINFO *pdevinfo)
 		HDA_DBG(HDA_DBG_INFO, "Record:\n");
 		HDA_DBG(HDA_DBG_INFO, "\n");
 		chid = codec->assoc_table[pdevinfo->recas].chans[0];
-		hdaa_dump_audio_formats(pdevinfo->pDev,
+		hdaa_dump_audio_formats(
 		    codec->hdaa_chan_table[chid].supp_stream_formats,
 		    codec->hdaa_chan_table[chid].supp_pcm_size_rate);
 		for (i = 0; i < codec->assoc_table[pdevinfo->recas].num_chans; i++) {
@@ -660,7 +650,7 @@ LOCAL void hdaa_dump_all_nodes(void)
 	HDA_DBG(HDA_DBG_INFO, "\n");
 	HDA_DBG(HDA_DBG_INFO, "Default Parameter\n");
 	HDA_DBG(HDA_DBG_INFO, "-----------------\n");
-	hdaa_dump_audio_formats(codec->pDev,
+	hdaa_dump_audio_formats(
                             codec->supp_stream_formats,
                             codec->supp_pcm_size_rate);
 	HDA_DBG(HDA_DBG_INFO, "         IN amp: 0x%08x\n",
@@ -720,7 +710,7 @@ printf("nid(10): ossmask= %d, ossdev= %d\n", w->ossmask, w->ossdev);
 		}
 		if (w->type == HDA_PARAM_AUDIO_WIDGET_CAP_TYPE_AUDIO_OUTPUT ||
 		    w->type == HDA_PARAM_AUDIO_WIDGET_CAP_TYPE_AUDIO_INPUT) {
-            hdaa_dump_audio_formats(codec->pDev,
+            hdaa_dump_audio_formats(
 			    w->param.supp_stream_formats,
 			    w->param.supp_pcm_size_rate);
 		} else if (w->type ==
@@ -731,10 +721,10 @@ printf("nid(10): ossmask= %d, ossdev= %d\n", w->ossmask, w->ossdev);
 			    w->param.eapdbtl);
 		if (HDA_PARAM_AUDIO_WIDGET_CAP_OUT_AMP(w->param.widget_cap) &&
 		    w->param.outamp_cap != 0)
-			hdaa_dump_amp(codec->pDev, w->param.outamp_cap, "Output");
+			hdaa_dump_amp(w->param.outamp_cap, "Output");
 		if (HDA_PARAM_AUDIO_WIDGET_CAP_IN_AMP(w->param.widget_cap) &&
 		    w->param.inamp_cap != 0)
-			hdaa_dump_amp(codec->pDev, w->param.inamp_cap, " Input");
+			hdaa_dump_amp(w->param.inamp_cap, " Input");
 		if (w->nconns > 0) {
 			HDA_DBG(HDA_DBG_INFO, "    connections: %d\n", w->nconns);
 			HDA_DBG(HDA_DBG_INFO, "          |\n");

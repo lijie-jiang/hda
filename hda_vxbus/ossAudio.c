@@ -24,16 +24,26 @@ modification history
 #include <string.h>
 #include <stdio.h>
 
-#include <hwif/vxbus/vxBus.h>
 #include <drv/sound/soundcard.h>
 
 #include <lstLib.h>
 #include <logLib.h>
 
 #include "audio/ossAudio.h"
-#include "audio/vxbHdAudio.h"
+#include "audio/hdAudio.h"
 
 LOCAL int ossAudioDrvNum = -1;
+
+/* imports */
+
+IMPORT void channel_stop(PCM_CHANNEL* chan);
+IMPORT int channel_setfragments(PCM_CHANNEL* chan, UINT32 blksz, UINT32 blkcnt);
+IMPORT UINT32 channel_setspeed(PCM_CHANNEL* chan, UINT32 speed);
+IMPORT int channel_setformat(PCM_CHANNEL *chan, UINT32 format);
+IMPORT UINT32 channel_getptr(PCM_CHANNEL* chan);
+IMPORT PCMCHAN_CAPS * channel_getcaps(PCM_CHANNEL* chan);
+IMPORT int channel_trigger(PCM_CHANNEL* chan, int go);
+IMPORT void * channel_init(void *data, struct snd_buf *b, PCM_CHANNEL *chan, int dir);
 
 LOCAL void *  ossAudioOpen (DEV_HDR * pDevHdr, const char * fileName, int flags, int mode);
 LOCAL int     ossAudioClose (void * pFileDesc);
@@ -46,15 +56,6 @@ LOCAL STATUS ossAudioFreeFd(DSP_DEV *pDspDev, DSP_FD *pFd);
 LOCAL DSP_FD * ossAudioAllocFd(DSP_DEV *pDspDev, int flags);
 LOCAL ssize_t ossAudioIo (DSP_DEV *pDspDev, PCM_CHANNEL * pChan, char * buffer, size_t size, int dir);
 LOCAL void ossAudioSync(DSP_DEV *pDspDev, PCM_CHANNEL* pChan);
-
-DEVMETHOD_DEF(pcm_channel_init,         "pcm_channel_init");
-DEVMETHOD_DEF(pcm_channel_setspeed,     "pcm_channel_setspeed");
-DEVMETHOD_DEF(pcm_channel_setformat,    "pcm_channel_setformat");
-DEVMETHOD_DEF(pcm_channel_setfragments, "pcm_channel_setfragments");
-DEVMETHOD_DEF(pcm_channel_stop,         "pcm_channel_stop");
-DEVMETHOD_DEF(pcm_channel_trigger,      "pcm_channel_trigger");
-DEVMETHOD_DEF(pcm_channel_getptr,       "pcm_channel_getptr");
-DEVMETHOD_DEF(pcm_channel_getcaps,      "pcm_channel_getcaps");
 
 STATUS ossAudioInit ()
     {
@@ -94,7 +95,7 @@ void ossDeleteDsp (DSP_DEV* pDspDev)
     free (pDspDev);
     }
 
-DSP_DEV * ossCreateDsp (VXB_DEVICE_ID pDev)
+DSP_DEV * ossCreateDsp (void)
     {
     DSP_DEV * pDspDev;
     char path[64];
@@ -109,7 +110,6 @@ DSP_DEV * ossCreateDsp (VXB_DEVICE_ID pDev)
 
     pDspDev = calloc(1, sizeof(DSP_DEV));
     pDspDev->mutex = semMCreate (SEM_Q_FIFO);
-    pDspDev->pDev = pDev;
     pDspDev->num_chan = 0;
     lstInit (&pDspDev->fdList);
     
@@ -123,10 +123,9 @@ DSP_DEV * ossCreateDsp (VXB_DEVICE_ID pDev)
         PCM_CHANNEL* pChan;
         
         pChan = &pDspDev->channel[j];
-        pChan->pDev = pDev;
         pChan->sem = semCCreate (0, SEM_EMPTY);
         pChan->msem = semMCreate (SEM_Q_FIFO);
-        pChan->sndbuf = sndbuf_create(pChan->pDev, pChan);
+        pChan->sndbuf = sndbuf_create(pChan);
         }
 
     iosDevAdd((DEV_HDR*)pDspDev, path, ossAudioDrvNum);
@@ -291,7 +290,7 @@ LOCAL int ossAudioClose (void * pFileDesc)
         if ((pFd->record) && (pFd->record->refcount == 1))
             {
             /* channel stop operation*/
-            METHOD_CALL(pDspDev->pDev, pcm_channel_stop, pFd->record);
+            channel_stop(pFd->record);
 
             /* channel reset operation */
 
@@ -320,7 +319,6 @@ LOCAL int ossAudioClose (void * pFileDesc)
 
 LOCAL ssize_t ossAudioIo (DSP_DEV *pDspDev, PCM_CHANNEL * pChan, char * buffer, size_t size, int dir)
     {
-    VXB_DEVICE_ID pDev = pDspDev->pDev;
     signed int remainder = min(size, sndbuf_getsize(pChan->sndbuf));
     size_t bytes = 0;
     static int total = 0;
@@ -344,7 +342,7 @@ LOCAL ssize_t ossAudioIo (DSP_DEV *pDspDev, PCM_CHANNEL * pChan, char * buffer, 
         if (pChan->flags & CHAN_FLAG_TRIGGER)
             {
             semTake (pDspDev->mutex, WAIT_FOREVER);
-            if (METHOD_CALL(pDev, pcm_channel_trigger, pChan, PCMTRIG_START) == OK)
+            if (channel_trigger(pChan, PCMTRIG_START) == OK)
                 pChan->flags &= ~CHAN_FLAG_TRIGGER;
             semGive (pDspDev->mutex);
             }
@@ -535,7 +533,7 @@ LOCAL void ossAudioSync(DSP_DEV *pDspDev, PCM_CHANNEL* pChan)
         }
 
     /* channel stop operation*/
-    METHOD_CALL(pDspDev->pDev, pcm_channel_stop, pChan);
+    channel_stop(pChan);
     
     }
 
@@ -543,7 +541,6 @@ LOCAL int ossAudioIoctl (void * pFileDesc, UINT32 function,  _Vx_ioctl_arg_t arg
     {
     DSP_FD * pFd = (DSP_FD*)pFileDesc;
     DSP_DEV * pDspDev = pFd->pDspDev;
-    VXB_DEVICE_ID pDev = pDspDev->pDev;
     PCM_CHANNEL * pChan = NULL;
 
     /* ioctl code key
@@ -578,8 +575,8 @@ LOCAL int ossAudioIoctl (void * pFileDesc, UINT32 function,  _Vx_ioctl_arg_t arg
                     pChan->abinfo.fragments = (data_buffer[0] >> 16);
                     pChan->abinfo.bytes = pChan->abinfo.fragments * pChan->abinfo.fragsize;
                     pChan->abinfo.fragstotal = pChan->abinfo.fragments;
-                    
-                    METHOD_CALL(pDev, pcm_channel_setfragments, pChan,
+
+                    channel_setfragments(pChan,
                                 pChan->abinfo.fragsize, pChan->abinfo.fragments);
 
                     pChan->semcnt = sndbuf_getblkcnt(pChan->sndbuf);
@@ -594,7 +591,7 @@ LOCAL int ossAudioIoctl (void * pFileDesc, UINT32 function,  _Vx_ioctl_arg_t arg
                     pChan->abinfo.bytes = pChan->abinfo.fragments * pChan->abinfo.fragsize;
                     pChan->abinfo.fragstotal = pChan->abinfo.fragments;
                     
-                    METHOD_CALL(pDev, pcm_channel_setfragments, pChan,
+                    channel_setfragments(pChan,
                                 pChan->abinfo.fragsize, pChan->abinfo.fragments);
 
                     pChan->semcnt = sndbuf_getblkcnt(pChan->sndbuf);
@@ -623,14 +620,14 @@ LOCAL int ossAudioIoctl (void * pFileDesc, UINT32 function,  _Vx_ioctl_arg_t arg
                 if (pChan != NULL)
                     {
                     pChan->rate = data_buffer[0];
-                    METHOD_CALL(pDev, pcm_channel_setspeed, pChan, pChan->rate);
+                    channel_setspeed(pChan, pChan->rate);
                     }
 
                 pChan = pFd->record;
                 if (pChan != NULL)
                     {
                     pChan->rate = data_buffer[0];
-                    METHOD_CALL(pDev, pcm_channel_setspeed, pChan, pChan->rate);
+                    channel_setspeed(pChan, pChan->rate);
                     }
                 break;
 
@@ -639,14 +636,14 @@ LOCAL int ossAudioIoctl (void * pFileDesc, UINT32 function,  _Vx_ioctl_arg_t arg
                 if (pChan != NULL)
                     {
                     pChan->afmt = data_buffer[0];
-                    METHOD_CALL(pDev, pcm_channel_setformat, pChan, pChan->afmt);
+                    channel_setformat(pChan, pChan->afmt);
                     }
 
                 pChan = pFd->record;
                 if (pChan != NULL)
                     {
                     pChan->afmt = data_buffer[0];
-                    METHOD_CALL(pDev, pcm_channel_setformat, pChan, pChan->afmt);
+                    channel_setformat(pChan, pChan->afmt);
                     }
                 break;
                 
@@ -711,20 +708,20 @@ LOCAL int ossAudioIoctl (void * pFileDesc, UINT32 function,  _Vx_ioctl_arg_t arg
             case SNDCTL_DSP_GETIPTR:
                 pChan = pFd->record;
                 if (pChan != NULL)
-                    data_buffer[0] = METHOD_CALL(pDev, pcm_channel_getptr, pChan);
+                    data_buffer[0] = channel_getptr(pChan);
                 break;
 
             case SNDCTL_DSP_GETOPTR:
                 pChan = pFd->record;
                 if (pChan != NULL)
-                    data_buffer[0] = METHOD_CALL(pDev, pcm_channel_getptr, pChan);
+                    data_buffer[0] = channel_getptr(pChan);
                 break;
 
             case SNDCTL_DSP_GETCAPS:
                 pChan = ((pFd->play == NULL) ? pFd->record : pFd->play);
                 if (pChan != NULL)
                     {
-                    PCMCHAN_CAPS *caps = (PCMCHAN_CAPS*) METHOD_CALL(pDev, pcm_channel_getcaps, pChan);
+                    PCMCHAN_CAPS *caps = (PCMCHAN_CAPS*) channel_getcaps(pChan);
                     data_buffer[0] = caps->caps;
                     }
                 break;
@@ -743,12 +740,12 @@ LOCAL int ossAudioIoctl (void * pFileDesc, UINT32 function,  _Vx_ioctl_arg_t arg
                     {
                     if (data_buffer[0] & PCM_ENABLE_OUTPUT)
                         {
-                        METHOD_CALL(pDev, pcm_channel_trigger, pChan, PCMTRIG_START);
+                        channel_trigger(pChan, PCMTRIG_START);
                         pChan->flags |= CHAN_FLAG_TRIGGER;
                         }
                     else
                         {
-                        METHOD_CALL(pDev, pcm_channel_trigger, pChan, PCMTRIG_ABORT);
+                        channel_trigger(pChan, PCMTRIG_ABORT);
                         pChan->flags &= ~CHAN_FLAG_TRIGGER;
                         }
                     }
@@ -758,12 +755,12 @@ LOCAL int ossAudioIoctl (void * pFileDesc, UINT32 function,  _Vx_ioctl_arg_t arg
                     {
                     if (data_buffer[0] & PCM_ENABLE_INPUT)
                         {
-                        METHOD_CALL(pDev, pcm_channel_trigger, pChan, PCMTRIG_START);
+                        channel_trigger(pChan, PCMTRIG_START);
                         pChan->flags |= CHAN_FLAG_TRIGGER;
                         }
                     else
                         {
-                        METHOD_CALL(pDev, pcm_channel_trigger, pChan, PCMTRIG_ABORT);
+                        channel_trigger(pChan, PCMTRIG_ABORT);
                         pChan->flags &= ~CHAN_FLAG_TRIGGER;
                         }
                     }
@@ -773,7 +770,7 @@ LOCAL int ossAudioIoctl (void * pFileDesc, UINT32 function,  _Vx_ioctl_arg_t arg
                 pChan = pFd->play;
                 if (pChan)
                     {
-                    METHOD_CALL(pDspDev->pDev, pcm_channel_stop, pChan);
+                    channel_stop(pChan);
                     /* channel reset operation */
                     sndbuf_reset(pChan->sndbuf);
                     pChan->semcnt = sndbuf_getblkcnt(pChan->sndbuf);
@@ -782,7 +779,7 @@ LOCAL int ossAudioIoctl (void * pFileDesc, UINT32 function,  _Vx_ioctl_arg_t arg
                 pChan = pFd->record;
                 if (pChan)
                     {
-                    METHOD_CALL(pDspDev->pDev, pcm_channel_stop, pChan);
+                    channel_stop(pChan);
                     /* channel reset operation */
                     sndbuf_reset(pChan->sndbuf);
                     pChan->semcnt = sndbuf_getblkcnt(pChan->sndbuf);
@@ -851,18 +848,17 @@ LOCAL int ossAudioIoctl (void * pFileDesc, UINT32 function,  _Vx_ioctl_arg_t arg
     return OK;
     }
 
-int osschannel_init (VXB_DEVICE_ID pDev, DSP_DEV * pDspDev, int dir, void * devinfo)
+int osschannel_init (DSP_DEV * pDspDev, int dir, void * devinfo)
     {
     PCM_CHANNEL* pChan;
 
     pChan = ossAudioFindChannel (pDspDev, PCM_DIR_NONE);
 
     pChan->dir = dir;
-
     pChan->stream = devinfo;
     pChan->afmts = (AFMT_U8 | AFMT_S16_LE | AFMT_S32_LE);
 
-    METHOD_CALL(pChan->pDev, pcm_channel_init, devinfo, pChan->sndbuf, pChan, dir);
+    channel_init(devinfo, pChan->sndbuf, pChan, dir);
 
     pChan->semcnt = sndbuf_getblkcnt(pChan->sndbuf);
     semCInitialize((char*)pChan->sem, SEM_Q_FIFO, pChan->semcnt);

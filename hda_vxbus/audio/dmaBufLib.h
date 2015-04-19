@@ -1,4 +1,4 @@
-/* vxbDmaBufBufLib.h - buffer and DMA system for VxBus drivers */
+/* dmaBufLib.h - buffer and DMA system for VxBus drivers */
 
 /*
  * Copyright (c) 2005-2007 Wind River Systems, Inc.
@@ -128,8 +128,6 @@ extern "C" {
 #endif
 
 /* includes */
-#include <vxBusLib.h>
-#include <hwif/vxbus/vxBus.h>
 
 #include <net/uio.h>
 #include <netBufLib.h>
@@ -158,7 +156,6 @@ typedef void			(bus_dma_lock_t)();
 typedef struct vxbDmaBufTag
     {
     struct vxbDmaBufTag *       pNext;          /* pointer to next tag */
-    VXB_DEVICE_ID               pInst;          /* instance id */
     struct vxbDmaBufTag *       parent;         /* parent tag */
     BOOL                        vxbTagValid;    /* tag validity flag */
     bus_size_t                  alignment;      /* alignment for segments */
@@ -193,8 +190,6 @@ typedef struct vxbDmaBufMap * VXB_DMA_MAP_ID;
 struct vxbDmaBufMap
     {
     VXB_DMA_TAG_ID   	dmaTagID;
-    VXB_DEVICE_ID	pParent;	/* Parent device */
-    VXB_DEVICE_ID	pDev;		/* map owner */
     FUNCPTR		mapLoadFunc;	/* parent bus load func */
     FUNCPTR		mapLoadMblkFunc;/* parent bus mBlk load */
     FUNCPTR		mapLoadIoVecFunc;/* parent bus iovec load func */
@@ -210,21 +205,15 @@ struct vxbDmaBufMap
 
 /* globals */
 
-METHOD_DECL(vxbDmaBufMapCreate);
-METHOD_DECL(vxbDmaBufMapDestroy);
-METHOD_DECL(vxbDmaBufMapMemAlloc);
-METHOD_DECL(vxbDmaBufMapMemFree);
 
 /* function pointers available to be filled in by BSP */
 
 IMPORT void * (*vxbDmaBufBspAlloc)
     (
-    VXB_DEVICE_ID	pInst,
     int			size
     );
 IMPORT STATUS (*vxbDmaBufBspFree)
     (
-    VXB_DEVICE_ID	pInst,
     void *		vaddr
     );
 
@@ -232,7 +221,6 @@ IMPORT STATUS (*vxbDmaBufBspFree)
 
 IMPORT STATUS (*vxbDmaBufArchInvalidate)
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     int			index,
@@ -241,7 +229,6 @@ IMPORT STATUS (*vxbDmaBufArchInvalidate)
     );
 IMPORT STATUS (*vxbDmaBufArchFlush)
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     int			index,
@@ -250,13 +237,11 @@ IMPORT STATUS (*vxbDmaBufArchFlush)
     );
 IMPORT STATUS (*vxbDmaBufMapArchInvalidate)
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map
     );
 IMPORT STATUS (*vxbDmaBufMapArchFlush)
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map
     );
@@ -269,13 +254,11 @@ IMPORT void vxbDmaBufInit();
 
 IMPORT VXB_DMA_TAG_ID vxbDmaBufTagParentGet
     (
-    VXB_DEVICE_ID	pInst,
     UINT32 		pRegBaseIndex
     );
 
 IMPORT VXB_DMA_TAG_ID vxbDmaBufTagCreate
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID	parent,
     bus_size_t		alignment,
     bus_size_t		boundary,
@@ -299,7 +282,6 @@ IMPORT STATUS vxbDmaBufTagDestroy
 
 IMPORT VXB_DMA_MAP_ID vxbDmaBufMapCreate
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     int 		flags,
     VXB_DMA_MAP_ID *	mapp
@@ -313,7 +295,6 @@ IMPORT STATUS vxbDmaBufMapDestroy
 
 IMPORT void * vxbDmaBufMemAlloc
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     void ** 		vaddr,
     int 		flags,
@@ -329,7 +310,6 @@ IMPORT STATUS vxbDmaBufMemFree
 
 IMPORT STATUS vxbDmaBufMapLoad
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     void *		buf,
@@ -339,7 +319,6 @@ IMPORT STATUS vxbDmaBufMapLoad
 
 IMPORT STATUS vxbDmaBufMapMblkLoad
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     M_BLK_ID		pMblk,
@@ -348,7 +327,6 @@ IMPORT STATUS vxbDmaBufMapMblkLoad
 
 IMPORT STATUS vxbDmaBufMapIoVecLoad
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     struct uio *	uio,
@@ -359,7 +337,6 @@ struct Ipcom_pkt_struct;
 
 IMPORT STATUS vxbDmaBufMapIpcomLoad
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     struct Ipcom_pkt_struct * pkt,
@@ -374,21 +351,18 @@ IMPORT STATUS vxbDmaBufMapUnload
 
 IMPORT STATUS vxbDmaBufMapFlush
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map
     );
 
 IMPORT STATUS vxbDmaBufMapInvalidate
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map
     );
 
 IMPORT STATUS vxbDmaBufFlush
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     int			index,
@@ -398,7 +372,6 @@ IMPORT STATUS vxbDmaBufFlush
 
 IMPORT STATUS vxbDmaBufInvalidate
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     int			index,
@@ -408,7 +381,6 @@ IMPORT STATUS vxbDmaBufInvalidate
 
 IMPORT STATUS vxbDmaBufSync
     (
-    VXB_DEVICE_ID	pInst,
     VXB_DMA_TAG_ID 	dmaTagID,
     VXB_DMA_MAP_ID 	map,
     bus_dmasync_op_t 	op

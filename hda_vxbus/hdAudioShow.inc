@@ -10,23 +10,15 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
-#include <hwif/vxbus/vxBus.h>
-#include <hwif/vxbus/hwConf.h>
-#include <hwif/util/vxbParamSys.h>
-#include <hwif/util/vxbDmaBufLib.h>
-
-#include <hwif/vxbus/vxbPciLib.h>
-#include <hwif/vxbus/hwConf.h>
 #include <drv/pci/pciConfigLib.h>
 #include <drv/pci/pciIntLib.h>
 
-#include <vxbus/vxbAccess.h>
-
 /* imports from the FreeBSD snd_hda driver... */
-#include "audio/vxbHdWidget.h"
-
+#include "audio/hdWidget.h"
 #include "audio/ossAudio.h"
-#include "audio/vxbHdAudio.h"
+#include "audio/hdAudio.h"
+#include "audio/dmaBufLib.h"
+
 /* #include "bucket.h" */
 
 
