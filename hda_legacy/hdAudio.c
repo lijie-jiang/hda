@@ -1,4 +1,4 @@
-/* vxbHdAudio.c - HD Audio Driver */
+/* hdAudio.c - HD Audio Driver */
 
 /*
  * Copyright (c) 2012 Wind River Systems, Inc.
@@ -17,21 +17,12 @@
 /*
   DESCRIPTION
 
-  This is the vxbus compliant HD Audio driver which implements the
+  This is the HD Audio driver which implements the
   functionality specified in the High Definition Audio Specification.
 
   The HD Audio controller provides an interface between a host CPU
   and one or more resident audio codecs.
 
-  EXTERNAL INTERFACE
-
-  The driver provides the standard vxbus external interface vxbHdAudioRegister().
-  This function registers the driver with the vxbus subsystem, and instances 
-  will be created as needed.  Only Intel PCI bus devices are currently supported,
-  simply define DRV_AUDIO_HDA in config.h or add this component into project 
-  build.
-
-  SEE ALSO: vxBus
   \tb "Intel ICH manual"
   \tb "High Definition Audio Specification"
 */
@@ -93,8 +84,6 @@ void HDA_DBG(unsigned int mask, const char *string, ...)
     va_end(va);
     }
 
-#define vxbHdAudioFormVerb  hdAudioFormVerb
-#define vxbHdAudioCommand   hdAudioCommand
 #else
 
 #define HDA_DBG(mask, string, ...)
@@ -116,16 +105,16 @@ void hdAudioInstInit (void);
 LOCAL void hdAudioInstConnect (void);
 
 LOCAL void hdAudioDevInit (void);
-LOCAL void vxbHdAudioIsr (HDA_DRV_CTRL *);
+LOCAL void hdAudioIsr (HDA_DRV_CTRL *);
 LOCAL void hdAudioMonTask (MSG_Q_ID msgQ);
 
 LOCAL UINT32 hdAudioFormVerb (cad_t cad, nid_t nid, UINT32 cmd, UINT32 payload);
-LOCAL UINT32 vxbHdAudioCommand(HDA_DRV_CTRL* pDrvCtrl, cad_t cad, UINT32 verb);
+LOCAL UINT32 hdAudioCommand(HDA_DRV_CTRL* pDrvCtrl, cad_t cad, UINT32 verb);
 LOCAL void hdAudioWidgetDiscovery(HDA_DRV_CTRL* pDrvCtrl, cad_t cad);
 LOCAL WIDGET* hdAudioWidgetFind (HDCODEC_ID codec, cad_t cad, nid_t nid);
 LOCAL WIDGET* hdAudioWidgetNum (HDCODEC_ID codec, int num);
 
-void vxbHdAudioSetPinCtrl (HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int val);
+void hdAudioSetPinCtrl (HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int val);
 
 /* locals */
 
@@ -204,13 +193,13 @@ LOCAL void audio_ctl_set_defaults(PCM_DEVINFO *pcm_dev_table);
 
 LOCAL UINT32 hdAudioCommand (HDA_DRV_CTRL* pDrvCtrl, cad_t cad, UINT32 verb);
 LOCAL WIDGET* hdAudioGetRootWidget (HDA_DRV_CTRL* pDrvCtrl, cad_t cad);
-LOCAL WIDGET* vxbHdAudioWidgetCreate (HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid);
+LOCAL WIDGET* hdAudioWidgetCreate (HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid);
 
 LOCAL nid_t audio_trace_dac (HDCODEC_ID codec, int, int, int, int, int, int, int);
 LOCAL int audio_trace_as_out(HDCODEC_ID codec, int as, int seq);
 LOCAL void audio_undo_trace(HDCODEC_ID codec, int as, int seq);
 
-LOCAL STATUS vxbHdAudioUnlink (void * unused);
+LOCAL STATUS hdAudioUnlink (void * unused);
 
 IMPORT void sysUsDelay(int uSec);
 #define hdaUsDelay sysUsDelay
@@ -253,26 +242,6 @@ IMPORT void sysUsDelay(int uSec);
     do  {                                                  \
         result = *(volatile UINT8 *)(pDrvCtrl->regBase + offset); \
         } while (FALSE)
-
-#if 0
-#define READ_1(offset)                                             \
-    vxbRead8(pDrvCtrl->regHandle, ((UINT8 *)(((UINT32)pDrvCtrl->regBase) + (offset))))
-
-#define READ_2(offset)                                             \
-    vxbRead16(pDrvCtrl->regHandle, ((UINT16 *)(((UINT32)pDrvCtrl->regBase) + (offset))))
-
-#define READ_4(offset)                                             \
-    vxbRead32(pDrvCtrl->regHandle, ((UINT32 *)(((UINT32)pDrvCtrl->regBase) + (offset))))
-
-#define WRITE_1(offset, value)                                     \
-    vxbWrite8(pDrvCtrl->regHandle, ((UINT8 *)(((UINT32)pDrvCtrl->regBase) + (offset))),(value))
-
-#define WRITE_2(offset, value)                                     \
-    vxbWrite16(pDrvCtrl->regHandle, ((UINT16 *)(((UINT32)pDrvCtrl->regBase) + (offset))),(value))
-
-#define WRITE_4(offset, value)                                     \
-    vxbWrite32(pDrvCtrl->regHandle, ((UINT32 *)(((UINT32)pDrvCtrl->regBase) + (offset))),(value))
-#endif
 
 #define ISDCTL(sc, n)   (_HDAC_ISDCTL((n),  (sc)->num_iss, (sc)->num_oss))
 #define ISDSTS(sc, n)   (_HDAC_ISDSTS((n),  (sc)->num_iss, (sc)->num_oss))
@@ -495,7 +464,7 @@ void hdAudioInstInit(void)
     /* Get HD controller capabilities */
     stat = get_capabilities(pDrvCtrl);
 
-    pDrvCtrl->parentTag = vxbDmaBufTagParentGet(0);
+    pDrvCtrl->parentTag = dmaBufTagParentGet(0);
 #ifdef  HDA_DBG_ON
     HDA_DBG(HDA_DBG_INFO, "parentTag= 0x%8.8x\n", pDrvCtrl->parentTag);
 #endif
@@ -526,7 +495,7 @@ void hdAudioInstInit(void)
         HDA_DBG(HDA_DBG_ERR, "dma_pos_addr = %8.8x\n",addr);
         }
 
-    pDrvCtrl->sndbuf_dma_tag = vxbDmaBufTagCreate(pDrvCtrl->parentTag,
+    pDrvCtrl->sndbuf_dma_tag = dmaBufTagCreate(pDrvCtrl->parentTag,
                        HDA_DMA_ALIGNMENT,
                        0, 
                        (pDrvCtrl->support_64bit) ? BUS_SPACE_MAXADDR : BUS_SPACE_MAXADDR_32BIT,
@@ -536,7 +505,7 @@ void hdAudioInstInit(void)
                        HDA_BUFSZ_DEFAULT,
                        HDA_BDL_MIN,
                        HDA_BUFSZ_DEFAULT,
-                       VXB_DMABUF_ALLOCNOW|VXB_DMABUF_NOCACHE,
+                       DMABUF_ALLOCNOW|DMABUF_NOCACHE,
                        NULL,
                        NULL,
                        NULL);
@@ -556,23 +525,6 @@ void hdAudioInstInit(void)
     
     return;
     }
-
-#if 0
-STATUS vxbHdAudioRebootCallback (VXB_DEVICE_ID pDev, void *pArg)
-    {
-    if (!(strcmp(pDev->pName, HDA_NAME)))
-        {
-        return vxbDevRemovalAnnounce (pDev);
-        }
-
-    return OK;
-    }
-
-void vxbHdAudioReboot(int type)
-    {
-    vxbDevIterate(vxbHdAudioRebootCallback, &type, VXB_ITERATE_INSTANCES);
-    }
-#endif
 
 /*******************************************************************************
  *
@@ -601,10 +553,7 @@ void vxbHdAudioReboot(int type)
         return;
         }
 
-    pDrvCtrl->unsolq_msgQ = msgQCreate(10, sizeof(VXB_HDA_MSG), MSG_Q_FIFO);
-#if 0
-    rebootHookAdd((FUNCPTR)vxbHdAudioReboot);
-#endif
+    pDrvCtrl->unsolq_msgQ = msgQCreate(10, sizeof(HDA_MSG), MSG_Q_FIFO);
 
     /* create a monitor task that handles state change and msgs */
 
@@ -613,7 +562,7 @@ void vxbHdAudioReboot(int type)
                HDA_MON_TASK_STACK, (void*)hdAudioMonTask, (int)pDrvCtrl->unsolq_msgQ,
                0, 0, 0, 0, 0, 0, 0, 0, 0);
     
-    pciIntConnect (pDrvCtrl->intVector, vxbHdAudioIsr, (int)pDrvCtrl);
+    pciIntConnect (pDrvCtrl->intVector, hdAudioIsr, (int)pDrvCtrl);
     sysIntEnablePIC (pDrvCtrl->intLvl);
     
     /* per-device init */
@@ -719,15 +668,7 @@ LOCAL void hdAudioDevInit (void)
             hdAudioWidgetDiscovery (pDrvCtrl, cad);
 
             powerup(codec);
-#if 0
-            /* set port A headphone output */
-            
-            vxbHdAudioSetPinCtrl(pDrvCtrl, cad, 0xa, 0xc4);
 
-            /* set port B input */
-            
-            vxbHdAudioSetPinCtrl(pDrvCtrl, cad, 0xb, 0x20);
-#endif
             audio_parse(codec);
 
             audio_ctl_parse(codec);
@@ -771,7 +712,7 @@ LOCAL void hdAudioDevInit (void)
 
 /*******************************************************************************
  *
- * vxbHdAudioIsr - interrupt service routine
+ * hdAudioIsr - interrupt service routine
  *
  * This routine handles interrupts of the HD Audio controller
  *
@@ -780,7 +721,7 @@ LOCAL void hdAudioDevInit (void)
  * ERRNO: N/A
  */
 
-LOCAL void vxbHdAudioIsr
+LOCAL void hdAudioIsr
     (
     HDA_DRV_CTRL * pDrvCtrl
     )
@@ -804,10 +745,10 @@ LOCAL void vxbHdAudioIsr
 
             if (pDrvCtrl->unsolq_rp != pDrvCtrl->unsolq_wp)
                 {
-                VXB_HDA_MSG msg;
-                msg.type = VXB_HDA_MSG_TYPE_UNSOLQ;
+                HDA_MSG msg;
+                msg.type = HDA_MSG_TYPE_UNSOLQ;
                 msgQSend(pDrvCtrl->unsolq_msgQ, (char*)&msg,
-                         VXB_HDA_MSG_SIZE, NO_WAIT, MSG_PRI_NORMAL);
+                         HDA_MSG_SIZE, NO_WAIT, MSG_PRI_NORMAL);
                 }
             }
 
@@ -879,18 +820,18 @@ LOCAL void hdAudioMonTask
 
     FOREVER
         {
-        VXB_HDA_MSG msg;
+        HDA_MSG msg;
         
         if (msgQReceive (msgQ, (char*)&msg, sizeof(msg), NO_WAIT) != ERROR)
             {
             switch (msg.type)
                 {
                 /* delete my queue and end execution */
-                case VXB_HDA_MSG_TYPE_UNLINK:
+                case HDA_MSG_TYPE_UNLINK:
                     msgQDelete(msgQ);
                     return;
                     
-                case VXB_HDA_MSG_TYPE_UNSOLQ:
+                case HDA_MSG_TYPE_UNSOLQ:
                 default:
                     unsolq_flush(pDrvCtrl);
                     break;
@@ -1172,8 +1113,8 @@ LOCAL int rirb_flush
     rirb_base = (RIRB *)pDrvCtrl->rirb_dma.dma_vaddr;
     HDA_READ_1(HDAC_RIRBWP, rirbwp);
 
-    vxbDmaBufSync( pDrvCtrl->rirb_dma.dma_tag,
-                   pDrvCtrl->rirb_dma.dma_map, VXB_DMABUFSYNC_POSTREAD );
+    dmaBufSync( pDrvCtrl->rirb_dma.dma_tag,
+                   pDrvCtrl->rirb_dma.dma_map, DMABUFSYNC_POSTREAD );
 
     ret = 0;
 
@@ -1270,13 +1211,13 @@ LOCAL UINT32 send_command
     pDrvCtrl->corb_wp %= pDrvCtrl->corb_size;
     corb = (UINT32 *)pDrvCtrl->corb_dma.dma_vaddr;
 
-    vxbDmaBufSync( pDrvCtrl->corb_dma.dma_tag,
-                   pDrvCtrl->corb_dma.dma_map, VXB_DMABUFSYNC_PREWRITE );
+    dmaBufSync( pDrvCtrl->corb_dma.dma_tag,
+                   pDrvCtrl->corb_dma.dma_map, DMABUFSYNC_PREWRITE );
 
     corb[pDrvCtrl->corb_wp] = verb;
 
-    vxbDmaBufSync( pDrvCtrl->corb_dma.dma_tag,
-                   pDrvCtrl->corb_dma.dma_map, VXB_DMABUFSYNC_POSTWRITE );
+    dmaBufSync( pDrvCtrl->corb_dma.dma_tag,
+                   pDrvCtrl->corb_dma.dma_map, DMABUFSYNC_POSTWRITE );
 
     HDA_WRITE_2(HDAC_CORBWP, pDrvCtrl->corb_wp);
 
@@ -1432,7 +1373,7 @@ LOCAL int dma_alloc
     /*
      * Create a DMA tag
      */
-    dma->dma_tag = vxbDmaBufTagCreate(pDrvCtrl->parentTag,
+    dma->dma_tag = dmaBufTagCreate(pDrvCtrl->parentTag,
                        HDA_DMA_ALIGNMENT,
                        0, 
                        (pDrvCtrl->support_64bit) ? BUS_SPACE_MAXADDR : BUS_SPACE_MAXADDR_32BIT, 
@@ -1442,7 +1383,7 @@ LOCAL int dma_alloc
                        roundsz,
                        1,
                        roundsz,
-                       VXB_DMABUF_ALLOCNOW|VXB_DMABUF_NOCACHE,
+                       DMABUF_ALLOCNOW|DMABUF_NOCACHE,
                        NULL,
                        NULL,
                        NULL/*&dma->dma_tag*/ );
@@ -1450,7 +1391,7 @@ LOCAL int dma_alloc
 #ifdef  HDA_DBG_ON
     HDA_DBG(HDA_DBG_INFO, "dma_tag= 0x%8.8x\n", dma->dma_tag);
 #endif
-    if (dma->dma_tag == (VXB_DMA_TAG_ID)NULL)
+    if (dma->dma_tag == (DMA_TAG_ID)NULL)
         {
         HDA_DBG(HDA_DBG_ERR, 
                 "could not create dma tag\n");
@@ -1458,7 +1399,7 @@ LOCAL int dma_alloc
         }
 
     /* Allocate DMA'able memory for ring. */
-    dma->dma_vaddr = vxbDmaBufMemAlloc( dma->dma_tag, 
+    dma->dma_vaddr = dmaBufMemAlloc( dma->dma_tag, 
                                         NULL/*(void **)(bus_size_t)&dma->dma_vaddr*/,
                                         0, &dma->dma_map );
 
@@ -1473,7 +1414,7 @@ LOCAL int dma_alloc
     /*
      * Map the memory
      */
-    status = vxbDmaBufMapLoad(dma->dma_tag, dma->dma_map, 
+    status = dmaBufMapLoad(dma->dma_tag, dma->dma_map, 
                               (void *)dma->dma_vaddr, roundsz,  0 );
 
     if (status != OK)
@@ -1510,11 +1451,11 @@ LOCAL void dma_free
     )
     {
     if (dma->dma_map != NULL)
-        vxbDmaBufMapUnload(dma->dma_tag, dma->dma_map);
+        dmaBufMapUnload(dma->dma_tag, dma->dma_map);
 
     if (dma->dma_vaddr != NULL)
         {
-        vxbDmaBufMemFree(dma->dma_tag, dma->dma_vaddr, dma->dma_map);
+        dmaBufMemFree(dma->dma_tag, dma->dma_vaddr, dma->dma_map);
         dma->dma_vaddr = NULL;
         }
 
@@ -1522,7 +1463,7 @@ LOCAL void dma_free
 
     if (dma->dma_tag != NULL)
         {
-        vxbDmaBufTagDestroy(dma->dma_tag);
+        dmaBufTagDestroy(dma->dma_tag);
         dma->dma_tag = NULL;
         }
 
@@ -1729,8 +1670,8 @@ LOCAL void rirb_init
 
     HDA_WRITE_1(HDAC_RIRBCTL, HDAC_RIRBCTL_RINTCTL);
 
-    vxbDmaBufSync( pDrvCtrl->rirb_dma.dma_tag,
-                   pDrvCtrl->rirb_dma.dma_map, VXB_DMABUFSYNC_PREREAD );
+    dmaBufSync( pDrvCtrl->rirb_dma.dma_tag,
+                   pDrvCtrl->rirb_dma.dma_map, DMABUFSYNC_PREREAD );
     }
 
 /****************************************************************************
@@ -1807,12 +1748,12 @@ LOCAL UINT32 hdAudioCommand (HDA_DRV_CTRL* pDrvCtrl, cad_t cad, UINT32 verb)
     return send_command(pDrvCtrl, cad, verb);
     }
 
-LOCAL void vxbHdAudioWidgetDelete (WIDGET* w)
+LOCAL void hdAudioWidgetDelete (WIDGET* w)
     {
     free (w);
     }
 
-LOCAL WIDGET* vxbHdAudioWidgetCreate (HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid)
+LOCAL WIDGET* hdAudioWidgetCreate (HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid)
     {
     WIDGET* w;
 
@@ -1838,13 +1779,13 @@ LOCAL WIDGET* hdAudioGetRootWidget (HDA_DRV_CTRL* pDrvCtrl, cad_t cad)
     }
 
 #if 0
-LOCAL void vxbHdAudioWidgetTraverse(HDA_DRV_CTRL* pDrvCtrl, cad_t cad)
+LOCAL void hdAudioWidgetTraverse(HDA_DRV_CTRL* pDrvCtrl, cad_t cad)
     {
     WIDGET *parent, *child;
 
     /* retrieve the root Widget */
 
-    parent = vxbHdAudioGetRootWidget(pDrvCtrl, cad);
+    parent = hdAudioGetRootWidget(pDrvCtrl, cad);
 
     child = (WIDGET*)lstFirst(&parent->widgetList);
     
@@ -1863,7 +1804,7 @@ LOCAL void vxbHdAudioWidgetTraverse(HDA_DRV_CTRL* pDrvCtrl, cad_t cad)
     }
 #endif
 
-LOCAL void vxbHdAudioWidgetDeleteAll(HDA_DRV_CTRL* pDrvCtrl, HDCODEC_ID codec)
+LOCAL void hdAudioWidgetDeleteAll(HDA_DRV_CTRL* pDrvCtrl, HDCODEC_ID codec)
     {
     WIDGET *parent, *child, *root, *afg;
 
@@ -1885,10 +1826,10 @@ LOCAL void vxbHdAudioWidgetDeleteAll(HDA_DRV_CTRL* pDrvCtrl, HDCODEC_ID codec)
         else
             child = (WIDGET*)lstNext((NODE*)child);
 
-        vxbHdAudioWidgetDelete (child);
+        hdAudioWidgetDelete (child);
         }
 
-    vxbHdAudioWidgetDelete (afg);
+    hdAudioWidgetDelete (afg);
     }
 
 
@@ -1978,7 +1919,7 @@ void hdAudioWidgetDiscovery (HDA_DRV_CTRL* pDrvCtrl, cad_t cad)
     
     while (subnode < limit)
         {
-        child = vxbHdAudioWidgetCreate(pDrvCtrl, cad, subnode);
+        child = hdAudioWidgetCreate(pDrvCtrl, cad, subnode);
         lstAdd (&parent->widgetList, (NODE*)child);
 
         HDA_DBG(HDA_DBG_INFO, "Widget nid = %d\n", child->nid);
@@ -2755,14 +2696,14 @@ int audio_ctl_ossmixer_set
 
 /*****************************************************************************
 *
-* vxbHdAudioUnlink -  VxBus unlink handler
+* hdAudioUnlink -  Unlink handler
 *
 * RETURNS: OK if device was successfully destroyed, otherwise ERROR
 *
 * ERRNO: N/A
 */
 
-LOCAL STATUS vxbHdCodecUnlink
+LOCAL STATUS hdCodecUnlink
     (
     HDCODEC_ID codec,
     void * unused
@@ -2784,7 +2725,7 @@ LOCAL STATUS vxbHdCodecUnlink
 
 	hda_command(codec, HDA_CMD_SET_POWER_STATE(0, codec->nid, HDA_CMD_POWER_STATE_D3));
 
-    vxbHdAudioWidgetDeleteAll(pDrvCtrl, codec);
+    hdAudioWidgetDeleteAll(pDrvCtrl, codec);
 
     free (codec->assoc_table);
     free (codec->ctl);
@@ -2797,32 +2738,32 @@ LOCAL STATUS vxbHdCodecUnlink
 
 /*****************************************************************************
 *
-* vxbHdAudioUnlink -  VxBus unlink handler
+* hdAudioUnlink - unlink handler
 *
 * RETURNS: OK if device was successfully destroyed, otherwise ERROR
 *
 * ERRNO: N/A
 */
 
-LOCAL STATUS vxbHdAudioUnlink
+LOCAL STATUS hdAudioUnlink
     (
     void * unused
     )
     { 
     int i;
     HDA_DRV_CTRL * pDrvCtrl;
-    VXB_HDA_MSG msg;
+    HDA_MSG msg;
     
     pDrvCtrl = device_get_softc();
 
     semTake(pDrvCtrl->mutex, NO_WAIT);
     
-    msg.type = VXB_HDA_MSG_TYPE_UNLINK;
+    msg.type = HDA_MSG_TYPE_UNLINK;
     msgQSend(pDrvCtrl->unsolq_msgQ, (char*)&msg,
-             VXB_HDA_MSG_SIZE, NO_WAIT, MSG_PRI_NORMAL);
+             HDA_MSG_SIZE, NO_WAIT, MSG_PRI_NORMAL);
 
     for (i = 0; i < pDrvCtrl->num_codec; i++)
-        vxbHdCodecUnlink(pDrvCtrl->codec_table[i], 0);
+        hdCodecUnlink(pDrvCtrl->codec_table[i], 0);
 
     for (i = 0; i < pDrvCtrl->num_ss; i++)
         dma_free (pDrvCtrl, &pDrvCtrl->streams[i].bdl);
@@ -2833,9 +2774,9 @@ LOCAL STATUS vxbHdAudioUnlink
     dma_free (pDrvCtrl, &pDrvCtrl->corb_dma);
     dma_free (pDrvCtrl, &pDrvCtrl->pos_dma);
 
-    vxbDmaBufTagDestroy (pDrvCtrl->sndbuf_dma_tag);
+    dmaBufTagDestroy (pDrvCtrl->sndbuf_dma_tag);
 
-    pciIntDisconnect (pDrvCtrl->intVector, vxbHdAudioIsr);
+    pciIntDisconnect (pDrvCtrl->intVector, hdAudioIsr);
     sysIntDisablePIC (pDrvCtrl->intLvl);
 
     semDelete (pDrvCtrl->mutex);
@@ -6330,8 +6271,7 @@ LOCAL void audio_ctl_dev_volume(PCM_DEVINFO *pdevinfo, unsigned dev)
         }
     }
 
-
-void vxbHdAudioSetPinCtrl (HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int val)
+void hdAudioSetPinCtrl (HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int val)
     {
     UINT32 verb;
 

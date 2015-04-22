@@ -3,7 +3,6 @@
 #include <semLib.h>
 #include <sysLib.h>
 #include <taskLib.h>
-#include <vxBusLib.h>
 #include <cacheLib.h>
 #include <ioLib.h>
 #include <iosLib.h>

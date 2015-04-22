@@ -3,7 +3,6 @@
 #include <semLib.h>
 #include <sysLib.h>
 #include <taskLib.h>
-#include <vxBusLib.h>
 #include <cacheLib.h>
 #include <ioLib.h>
 #include <iosLib.h>
@@ -52,15 +51,15 @@
     (HDA_CMD_VERB_12BIT((verb), (payload))))
 #endif
 
-void vxbHdAudioShowAmp(NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
-void vxbHdAudioShowNode (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
-void vxbHdAudioShowNodes(NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
-void vxbHdAudioShowConverter (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
-void vxbHdAudioShowConfigDefaults (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
-void vxbHdAudioShowConnections (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
-void vxbHdAudioShowUnsolicited (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
-void vxbHdAudioShowPinCtrl (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
-void vxbHdAudioShowPinSense (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
+void hdAudioShowAmp(NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
+void hdAudioShowNode (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
+void hdAudioShowNodes(NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
+void hdAudioShowConverter (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
+void hdAudioShowConfigDefaults (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
+void hdAudioShowConnections (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
+void hdAudioShowUnsolicited (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
+void hdAudioShowPinCtrl (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
+void hdAudioShowPinSense (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose);
 
 static struct param_str_t
     {
@@ -324,53 +323,53 @@ static int paramIndex(UINT32 param)
     }
 
 
-void vxbAudioShowWidgetGPIO (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
+void audioShowWidgetGPIO (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
     {
     UINT32 verb, val;
     
-    verb = vxbHdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPI_DATA, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    verb = hdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPI_DATA, 0);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     printf ("\tGET_GPI_DATA: 0x%x\n", val);
 
-    verb = vxbHdAudioFormVerb(cad, nid,HDA_CMD_VERB_GET_GPI_WAKE_ENABLE_MASK, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    verb = hdAudioFormVerb(cad, nid,HDA_CMD_VERB_GET_GPI_WAKE_ENABLE_MASK, 0);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     printf ("\tGET_GPI_WAKE_ENABLE_MASK: 0x%x\n", val);
 
-    verb = vxbHdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPI_UNSOLICITED_ENABLE_MASK, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    verb = hdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPI_UNSOLICITED_ENABLE_MASK, 0);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     printf ("\tGET_GPI_UNSOLICITED_ENABLE_MASK: 0x%x\n", val);
 
-    verb = vxbHdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPI_STICKY_MASK, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    verb = hdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPI_STICKY_MASK, 0);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     printf ("\tGET_GPI_STICKY_MASK: 0x%x\n", val);
 
-    verb = vxbHdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPO_DATA, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    verb = hdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPO_DATA, 0);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     printf ("\tVERB_GET_GPO_DATA: 0x%x\n", val);
 
-    verb = vxbHdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPIO_DATA, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    verb = hdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPIO_DATA, 0);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     printf ("\tGET_GPIO_DATA: 0x%x\n", val);
     
-    verb = vxbHdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPIO_DIRECTION, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    verb = hdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPIO_DIRECTION, 0);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     printf ("\tGET_GPIO_DIRECTION: 0x%x\n", val);
 
-    verb = vxbHdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPIO_WAKE_ENABLE_MASK, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    verb = hdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPIO_WAKE_ENABLE_MASK, 0);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     printf ("\tGET_GPIO_WAKE_ENABLE_MASK: 0x%x\n", val);
 
-    verb = vxbHdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPIO_UNSOLICITED_ENABLE_MASK, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    verb = hdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPIO_UNSOLICITED_ENABLE_MASK, 0);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     printf ("\tGET_GPIO_UNSOLICITED_ENABLE_MASK: 0x%x\n", val);
 
-    verb = vxbHdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPIO_STICKY_MASK, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    verb = hdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_GPIO_STICKY_MASK, 0);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     printf ("\tGET_GPIO_STICKY_MASK: 0x%x\n", val);
     }
 
 
-void vxbAudioShowAFG (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int verbose)
+void audioShowAFG (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int verbose)
     {
     int i, features;
     printf("Audio Function Group cad[%d] nid[%d]\n", w.cad, w.nid);
@@ -412,10 +411,10 @@ void vxbAudioShowAFG (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int verbose)
     features = w.params[paramIndex(HDA_PARAM_GPIO_COUNT)].val;
     printf ("\tGPIO Count: 0x%x\n", features);
 
-    vxbAudioShowWidgetGPIO (pDrvCtrl, w.cad, w.nid, verbose);
+    audioShowWidgetGPIO (pDrvCtrl, w.cad, w.nid, verbose);
     }
 
-void vxbAudioShowWidgetOutput (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int verbose)
+void audioShowWidgetOutput (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int verbose)
     {
     int i, features;
     UINT32 verb, val;
@@ -453,12 +452,12 @@ void vxbAudioShowWidgetOutput (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int v
         );
 
     /* stream/channel */
-    verb = vxbHdAudioFormVerb(w.cad, w.nid, HDA_CMD_VERB_GET_CONV_STREAM_CHAN, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, w.cad, verb);
+    verb = hdAudioFormVerb(w.cad, w.nid, HDA_CMD_VERB_GET_CONV_STREAM_CHAN, 0);
+    val = hdAudioCommand(pDrvCtrl, w.cad, verb);
     printf ("\t Stream and Channel: 0x%x\n", val);
     }
 
-void vxbAudioShowWidgetInput (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int verbose)
+void audioShowWidgetInput (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int verbose)
     {
     int i, features;
     UINT32 verb, val;
@@ -499,12 +498,12 @@ void vxbAudioShowWidgetInput (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int ve
         );
    
     /* stream/channel */
-    verb = vxbHdAudioFormVerb(w.cad, w.nid, HDA_CMD_VERB_GET_CONV_STREAM_CHAN, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, w.cad, verb);
+    verb = hdAudioFormVerb(w.cad, w.nid, HDA_CMD_VERB_GET_CONV_STREAM_CHAN, 0);
+    val = hdAudioCommand(pDrvCtrl, w.cad, verb);
     printf ("\t Stream and Channel: 0x%x\n", val);
     }
 
-void vxbAudioShowWidgetMixer (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int verbose)
+void audioShowWidgetMixer (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int verbose)
     {
     int features;
     printf("Mixer Widget cad[%d] nid[%d]\n", w.cad, w.nid);
@@ -517,7 +516,7 @@ void vxbAudioShowWidgetMixer (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int ve
     printf ("\tOutput Amp Cap: 0x%x\n", features);
     }
 
-void vxbAudioShowWidgetSelector (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int verbose)
+void audioShowWidgetSelector (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int verbose)
     {
     int features;
     printf("Selector Widget cad[%d] nid[%d]\n", w.cad, w.nid);
@@ -530,7 +529,7 @@ void vxbAudioShowWidgetSelector (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int
     printf ("\tOutput Amp Cap: 0x%x\n", features);
     }
 
-void vxbAudioShowWidgetPincomplex (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int verbose)
+void audioShowWidgetPincomplex (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, int verbose)
     {
     int features;
     printf("PinComplex Widget cad[%d] nid[%d]\n", w.cad, w.nid);
@@ -544,7 +543,7 @@ void vxbAudioShowWidgetPincomplex (NEW_HDA_DRV_CTRL* pDrvCtrl, WIDGET_PARAM w, i
 
     }
 
-void vxbHdAudioShowNode (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
+void hdAudioShowNode (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
     {
     UINT32 verb;
     UINT32 val;
@@ -556,13 +555,13 @@ void vxbHdAudioShowNode (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int v
     
     for (count = 0; count < NELEMENTS(param_str); count++)
         {
-        verb = vxbHdAudioFormVerb(cad, nid,
+        verb = hdAudioFormVerb(cad, nid,
                                   HDA_CMD_VERB_GET_PARAMETER,
                                   param_str[count].cmd);
         
         w.params[count].cmd = param_str[count].cmd;
         
-        val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+        val = hdAudioCommand(pDrvCtrl, cad, verb);
         w.params[count].val = val;
 
         if (verbose > 0x10)
@@ -574,7 +573,7 @@ void vxbHdAudioShowNode (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int v
     if ((w.params[paramIndex(HDA_PARAM_FCT_GRP_TYPE)].val & 1) &&
         (w.params[paramIndex(HDA_PARAM_SUB_NODE_COUNT)].val > 0))
         {
-        vxbAudioShowAFG(pDrvCtrl, w, verbose);
+        audioShowAFG(pDrvCtrl, w, verbose);
         }
 
     if (w.params[paramIndex(HDA_PARAM_SUB_NODE_COUNT)].val == 0)
@@ -587,53 +586,53 @@ void vxbHdAudioShowNode (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int v
         switch (type)
             {
             case HDA_WIDGET_TYPE_AUDIO_OUTPUT:
-                vxbHdAudioShowAmp(pDrvCtrl, cad, nid, verbose);
-                vxbAudioShowWidgetOutput(pDrvCtrl, w, verbose);
-                vxbHdAudioShowConverter (pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowAmp(pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowUnsolicited (pDrvCtrl, cad, nid, verbose);
+                hdAudioShowAmp(pDrvCtrl, cad, nid, verbose);
+                audioShowWidgetOutput(pDrvCtrl, w, verbose);
+                hdAudioShowConverter (pDrvCtrl, cad, nid, verbose);
+                hdAudioShowAmp(pDrvCtrl, cad, nid, verbose);
+                hdAudioShowUnsolicited (pDrvCtrl, cad, nid, verbose);
                 
                 break;
             case HDA_WIDGET_TYPE_AUDIO_INPUT:
-                vxbAudioShowWidgetInput(pDrvCtrl, w, verbose);
-                vxbHdAudioShowConverter (pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowConnections (pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowAmp(pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowUnsolicited (pDrvCtrl, cad, nid, verbose);
+                audioShowWidgetInput(pDrvCtrl, w, verbose);
+                hdAudioShowConverter (pDrvCtrl, cad, nid, verbose);
+                hdAudioShowConnections (pDrvCtrl, cad, nid, verbose);
+                hdAudioShowAmp(pDrvCtrl, cad, nid, verbose);
+                hdAudioShowUnsolicited (pDrvCtrl, cad, nid, verbose);
                 break;
 
             case HDA_WIDGET_TYPE_AUDIO_MIXER:
-                vxbAudioShowWidgetMixer(pDrvCtrl, w, verbose);
-                vxbHdAudioShowConnections (pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowAmp(pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowUnsolicited (pDrvCtrl, cad, nid, verbose);
+                audioShowWidgetMixer(pDrvCtrl, w, verbose);
+                hdAudioShowConnections (pDrvCtrl, cad, nid, verbose);
+                hdAudioShowAmp(pDrvCtrl, cad, nid, verbose);
+                hdAudioShowUnsolicited (pDrvCtrl, cad, nid, verbose);
                 break;
 
             case HDA_WIDGET_TYPE_AUDIO_SELECTOR:
-                vxbAudioShowWidgetSelector(pDrvCtrl, w, verbose);
-                vxbHdAudioShowConnections (pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowAmp(pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowUnsolicited (pDrvCtrl, cad, nid, verbose);
+                audioShowWidgetSelector(pDrvCtrl, w, verbose);
+                hdAudioShowConnections (pDrvCtrl, cad, nid, verbose);
+                hdAudioShowAmp(pDrvCtrl, cad, nid, verbose);
+                hdAudioShowUnsolicited (pDrvCtrl, cad, nid, verbose);
                 break;
 
             case HDA_WIDGET_TYPE_AUDIO_PINCOMPLEX:
-                vxbAudioShowWidgetPincomplex(pDrvCtrl, w, verbose);
-                vxbHdAudioShowPinCtrl(pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowPinSense(pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowConfigDefaults (pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowConnections (pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowAmp(pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowUnsolicited (pDrvCtrl, cad, nid, verbose);
+                audioShowWidgetPincomplex(pDrvCtrl, w, verbose);
+                hdAudioShowPinCtrl(pDrvCtrl, cad, nid, verbose);
+                hdAudioShowPinSense(pDrvCtrl, cad, nid, verbose);
+                hdAudioShowConfigDefaults (pDrvCtrl, cad, nid, verbose);
+                hdAudioShowConnections (pDrvCtrl, cad, nid, verbose);
+                hdAudioShowAmp(pDrvCtrl, cad, nid, verbose);
+                hdAudioShowUnsolicited (pDrvCtrl, cad, nid, verbose);
                 break;
 
             case HDA_WIDGET_TYPE_AUDIO_POWER:
-                vxbHdAudioShowConnections (pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowUnsolicited (pDrvCtrl, cad, nid, verbose);
+                hdAudioShowConnections (pDrvCtrl, cad, nid, verbose);
+                hdAudioShowUnsolicited (pDrvCtrl, cad, nid, verbose);
                 break;
 
             case HDA_WIDGET_TYPE_AUDIO_VOLUMEKNOB:
-                vxbHdAudioShowConnections (pDrvCtrl, cad, nid, verbose);
-                vxbHdAudioShowUnsolicited (pDrvCtrl, cad, nid, verbose);
+                hdAudioShowConnections (pDrvCtrl, cad, nid, verbose);
+                hdAudioShowUnsolicited (pDrvCtrl, cad, nid, verbose);
                 break;
             case HDA_WIDGET_TYPE_AUDIO_BEEPGEN:
             case HDA_WIDGET_TYPE_AUDIO_VENDORSPEC:
@@ -645,29 +644,29 @@ void vxbHdAudioShowNode (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int v
     
     }
 
-void vxbHdAudioShowNodes(NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
+void hdAudioShowNodes(NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
     {
     int subnode = 0;
     int size = 0;
     UINT32 verb;
     UINT32 val;
 
-    vxbHdAudioShowNode(pDrvCtrl, cad, nid, verbose);
+    hdAudioShowNode(pDrvCtrl, cad, nid, verbose);
 
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_GET_PARAMETER,
                               HDA_PARAM_SUB_NODE_COUNT);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
 
     subnode = val >> 16;
     size = val & 0xffff;
 
     for (;size > 0; size--)
-        vxbHdAudioShowNodes (pDrvCtrl, cad, subnode++, verbose);
+        hdAudioShowNodes (pDrvCtrl, cad, subnode++, verbose);
     
     }
 
-UINT32 vxbHdAudioVerbNode (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, UINT32 cmd, UINT32 payload)
+UINT32 hdAudioVerbNode (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, UINT32 cmd, UINT32 payload)
     {
     UINT32 verb;
 
@@ -688,22 +687,22 @@ UINT32 vxbHdAudioVerbNode (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, UIN
     return verb;
     }
 
-void vxbHdAudioVerbNodes(NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, UINT32 cmd, UINT32 payload)
+void hdAudioVerbNodes(NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, UINT32 cmd, UINT32 payload)
     {
     int subnode = 0;
     int size = 0;
     UINT32 val;
     UINT32 verb;
     
-    vxbHdAudioVerbNode (pDrvCtrl, cad, nid, cmd, payload);
-    verb = vxbHdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_PARAMETER, HDA_PARAM_SUB_NODE_COUNT);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    hdAudioVerbNode (pDrvCtrl, cad, nid, cmd, payload);
+    verb = hdAudioFormVerb(cad, nid, HDA_CMD_VERB_GET_PARAMETER, HDA_PARAM_SUB_NODE_COUNT);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
 
     subnode = val >> 16;
     size = val & 0xffff;
 
     for (;size > 0; size--)
-        vxbHdAudioVerbNode (pDrvCtrl, cad, subnode++, cmd, payload);
+        hdAudioVerbNode (pDrvCtrl, cad, subnode++, cmd, payload);
     
     }
 
@@ -714,7 +713,7 @@ struct dma_pcb
     UINT32 res;
     };
     
-void vxbHdAudioDmaDebug (NEW_HDA_DRV_CTRL* pDrvCtrl)
+void hdAudioDmaDebug (NEW_HDA_DRV_CTRL* pDrvCtrl)
     {
     int i = 0;
     int ss = pDrvCtrl->num_ss;
@@ -733,32 +732,32 @@ void vxbHdAudioDmaDebug (NEW_HDA_DRV_CTRL* pDrvCtrl)
 #define HDA_CMD_VERB_GET_CONV_FMT			0xa
 #define HDA_CMD_VERB_SET_CONV_FMT			0x2
 
-void vxbHdAudioPrepConverter (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, UINT32 chan, UINT32 format, UINT32 count)
+void hdAudioPrepConverter (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, UINT32 chan, UINT32 format, UINT32 count)
     {
     UINT32 verb;
 #if 1
     UINT32 val;
-    verb = vxbHdAudioFormVerb(cad, nid, HDA_CMD_VERB_SET_CONV_FMT, format);
-    vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    verb = hdAudioFormVerb(cad, nid, HDA_CMD_VERB_SET_CONV_FMT, format);
+    hdAudioCommand(pDrvCtrl, cad, verb);
 #endif
-    verb = vxbHdAudioFormVerb(cad, nid, HDA_CMD_VERB_SET_CONV_STREAM_CHAN, chan);
-    vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    verb = hdAudioFormVerb(cad, nid, HDA_CMD_VERB_SET_CONV_STREAM_CHAN, chan);
+    hdAudioCommand(pDrvCtrl, cad, verb);
 
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_SET_CONV_CHAN_COUNT, count);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     }
 
-void vxbHdAudioShowConverter (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
+void hdAudioShowConverter (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
     {
     UINT32 verb;
     UINT32 val;
     UINT32 rate;
     UINT32 hrate, lrate;
     
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_GET_CONV_FMT, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
 
     printf ("\t");
     rate = ((val >> 14) & 1) ? 44100 : 48000;
@@ -777,18 +776,18 @@ void vxbHdAudioShowConverter (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, 
     if (verbose)
         printf("cad[%d] nid[%d]:format 0x%x\n", cad, nid, val);
     
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_GET_CONV_STREAM_CHAN, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
 
     printf("\tstream %d channel %d\n", val >> 4, val & 0xf);
 
     if (verbose)
         printf("cad[%d] nid[%d]:channel 0x%x\n", cad, nid, val);
 
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_GET_CONV_CHAN_COUNT, 0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
 
     printf("\tchannel count %d\n", val + 1);
 
@@ -796,15 +795,15 @@ void vxbHdAudioShowConverter (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, 
         printf("cad[%d] nid[%d]:channel count %d\n", cad, nid, val);
     }
 
-void vxbHdAudioShowConfigDefaults (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
+void hdAudioShowConfigDefaults (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
     {
     UINT32 verb;
     UINT32 val;
 
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_GET_CONFIGURATION_DEFAULT,
                               0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
 
     printf ("\t\t   port connectivity %d\n", (val >> 30) &    3);
     printf ("\t\t            location %d %s\n", (val >> 26) & 3, location[(val >> 24) & 0xf]);
@@ -819,15 +818,15 @@ void vxbHdAudioShowConfigDefaults (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t 
         printf("cad[%d] nid[%d]:config default 0x%x\n", cad, nid, val);
     }    
 
-void vxbHdAudioShowPinCtrl (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
+void hdAudioShowPinCtrl (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
     {
     UINT32 verb;
     UINT32 val;
 
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_GET_PIN_WIDGET_CTRL,
                               0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
 
     
     printf("\tPin Control 0x%x\n", cad, nid, val);
@@ -836,79 +835,79 @@ void vxbHdAudioShowPinCtrl (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, in
         printf("cad[%d] nid[%d]:Pin Control 0x%x\n", cad, nid, val);
     }    
 
-void vxbHdAudioShowPinSense (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
+void hdAudioShowPinSense (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
     {
     UINT32 verb;
     UINT32 val;
 
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_GET_PIN_SENSE,
                               0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     if (verbose)
         printf("cad[%d] nid[%d]:Pin Sense 0x%x\n", cad, nid, val);
     }    
 
-void vxbHdAudioSelectSource (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int index)
+void hdAudioSelectSource (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int index)
     {
     UINT32 verb;
     UINT32 val;
 
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_SET_CONN_SELECT_CONTROL,
                               index);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     }
 
-void vxbHdAudioShowSelector (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
+void hdAudioShowSelector (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
     {
     UINT32 verb;
     UINT32 val;
 
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_GET_CONN_SELECT_CONTROL,
                               0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     if (verbose)
         printf("cad[%d] nid[%d]:conn select 0x%x\n", cad, nid, val);
     }
 
-void vxbHdAudioShowUnsolicited (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
+void hdAudioShowUnsolicited (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
     {
     UINT32 verb;
     UINT32 val;
 
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_GET_UNSOLICITED_RESPONSE,
                               0);
-    val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    val = hdAudioCommand(pDrvCtrl, cad, verb);
     if (verbose)
         printf("cad[%d] nid[%d]:unsolicited 0x%x\n", cad, nid, val);
     }    
 
-int vxbHdAudioGetConnectionListLength (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid)
+int hdAudioGetConnectionListLength (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid)
     {
     UINT32 verb;
     UINT32 length;
 
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_GET_PARAMETER,
                               HDA_PARAM_CONN_LIST_LENGTH);
-    length = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    length = hdAudioCommand(pDrvCtrl, cad, verb);
 
     length &= HDA_PARAM_CONN_LIST_LENGTH_LIST_LENGTH_MASK;
     return length;
     }
 
-int vxbHdAudioLongFormP (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid)
+int hdAudioLongFormP (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid)
     {
     UINT32 verb;
     UINT32 length;
     int form = FALSE;
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_GET_PARAMETER,
                               HDA_PARAM_CONN_LIST_LENGTH);
-    length = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    length = hdAudioCommand(pDrvCtrl, cad, verb);
 
     if (length & HDA_PARAM_CONN_LIST_LENGTH_LONG_FORM_MASK)
         form = TRUE;
@@ -916,14 +915,14 @@ int vxbHdAudioLongFormP (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid)
     return form;
     }
 
-void vxbHdAudioShowConnections (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
+void hdAudioShowConnections (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
     {
     UINT32 verb;
     UINT32 val, length;
     int i, form = FALSE;
 
-    length = vxbHdAudioGetConnectionListLength (pDrvCtrl, cad, nid);
-    form = vxbHdAudioLongFormP (pDrvCtrl, cad, nid);
+    length = hdAudioGetConnectionListLength (pDrvCtrl, cad, nid);
+    form = hdAudioLongFormP (pDrvCtrl, cad, nid);
 
     if (verbose)
         printf("cad[%d] nid[%d]:conn list length 0x%x\n", cad, nid,
@@ -932,9 +931,9 @@ void vxbHdAudioShowConnections (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid
     if (form)
         for (i = 0; i < length; )
             {
-            verb = vxbHdAudioFormVerb(cad, nid,
+            verb = hdAudioFormVerb(cad, nid,
                                       HDA_CMD_VERB_GET_CONN_LIST_ENTRY, i);
-            val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+            val = hdAudioCommand(pDrvCtrl, cad, verb);
 
             printf("\tConnection List Entry %d %d\n", i, val & 0xffff);
             if (verbose)
@@ -953,9 +952,9 @@ void vxbHdAudioShowConnections (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid
     else
         for (i = 0; i < length; )
             {
-            verb = vxbHdAudioFormVerb(cad, nid,
+            verb = hdAudioFormVerb(cad, nid,
                                       HDA_CMD_VERB_GET_CONN_LIST_ENTRY, i);
-            val = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+            val = hdAudioCommand(pDrvCtrl, cad, verb);
 
             printf("\tConnection List Entry %d %d\n", i, val & 0xff);
             if (verbose)
@@ -990,13 +989,13 @@ void vxbHdAudioShowConnections (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid
             }
     }
 
-void vxbHdAudioSetGain (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, UINT16 arg)
+void hdAudioSetGain (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, UINT16 arg)
     {
     UINT32 verb;
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_SET_AMP_GAIN_MUTE,
                               arg);
-    vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    hdAudioCommand(pDrvCtrl, cad, verb);
     }
 
 #define HDA_CMD_SET_AMP_GAIN_MUTE_OUTPUT	0x8000
@@ -1013,7 +1012,7 @@ void vxbHdAudioSetGain (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, UINT16
  * left : 0 - left, 1 - right
  * step : step value of output amplifier capabilitier
  */
-void vxbHdSetOutAmp(NEW_HDA_DRV_CTRL* pDrvCtrl, nid_t nid, nid_t left, UINT8 step)
+void hdSetOutAmp(NEW_HDA_DRV_CTRL* pDrvCtrl, nid_t nid, nid_t left, UINT8 step)
     {
     UINT16 payload = 0;
 
@@ -1021,16 +1020,16 @@ void vxbHdSetOutAmp(NEW_HDA_DRV_CTRL* pDrvCtrl, nid_t nid, nid_t left, UINT8 ste
     payload |= HDA_CMD_SET_AMP_GAIN_MUTE_LEFT >> (left&1);
     payload |= step&0x7f;
 
-    vxbHdAudioSetGain (pDrvCtrl, 0, nid, payload);
+    hdAudioSetGain (pDrvCtrl, 0, nid, payload);
     }
 
 /*
  * set output amplifier for stereo
  */
-void vxbHdSetOutAmpStereo(NEW_HDA_DRV_CTRL* pDrvCtrl, nid_t nid, UINT8 step)
+void hdSetOutAmpStereo(NEW_HDA_DRV_CTRL* pDrvCtrl, nid_t nid, UINT8 step)
     {
-    vxbHdSetOutAmp(pDrvCtrl, nid, 0, step);
-    vxbHdSetOutAmp(pDrvCtrl, nid, 1, step);
+    hdSetOutAmp(pDrvCtrl, nid, 0, step);
+    hdSetOutAmp(pDrvCtrl, nid, 1, step);
     }
 
 void inputGainPowerUp (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int port, UINT16 level)
@@ -1041,7 +1040,7 @@ void inputGainPowerUp (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int por
     gain |= (port << HDA_CMD_SET_AMP_GAIN_MUTE_INDEX_SHIFT);
     gain |= level;
     
-    vxbHdAudioSetGain (pDrvCtrl, cad, nid, gain);
+    hdAudioSetGain (pDrvCtrl, cad, nid, gain);
     }
 
 void outputGainPowerUp (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int port, UINT16 level)
@@ -1052,48 +1051,48 @@ void outputGainPowerUp (NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int po
     gain |= (port << HDA_CMD_SET_AMP_GAIN_MUTE_INDEX_SHIFT);
     gain |= level;
     
-    vxbHdAudioSetGain (pDrvCtrl, cad, nid, gain);
+    hdAudioSetGain (pDrvCtrl, cad, nid, gain);
     }
 
-void vxbHdAudioShowAmp(NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
+void hdAudioShowAmp(NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int verbose)
     {
     int inputs, i;
     UINT8 lgain, rgain;
     UINT16 payload;
     UINT32 verb;
     
-    inputs = vxbHdAudioGetConnectionListLength (pDrvCtrl, cad, nid);
+    inputs = hdAudioGetConnectionListLength (pDrvCtrl, cad, nid);
 
     printf ("  amp gain values left:right\n");
     for (i = 0; i < inputs; i++)
         {
         payload = i | HDA_CMD_GET_AMP_GAIN_MUTE_INPUT | HDA_CMD_GET_AMP_GAIN_MUTE_LEFT;
-        verb = vxbHdAudioFormVerb(cad, nid,
+        verb = hdAudioFormVerb(cad, nid,
                                   HDA_CMD_VERB_GET_AMP_GAIN_MUTE,
                                   payload);
-        lgain = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+        lgain = hdAudioCommand(pDrvCtrl, cad, verb);
         
         payload = i | HDA_CMD_GET_AMP_GAIN_MUTE_INPUT | HDA_CMD_GET_AMP_GAIN_MUTE_RIGHT;
-        verb = vxbHdAudioFormVerb(cad, nid,
+        verb = hdAudioFormVerb(cad, nid,
                                   HDA_CMD_VERB_GET_AMP_GAIN_MUTE,
                                   payload);
-        rgain = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+        rgain = hdAudioCommand(pDrvCtrl, cad, verb);
         
         
         printf ("widget input %d amp:   0x%x : 0x%x\n", i, lgain, rgain);
         }
 
     payload = HDA_CMD_GET_AMP_GAIN_MUTE_OUTPUT | HDA_CMD_GET_AMP_GAIN_MUTE_LEFT;
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_GET_AMP_GAIN_MUTE,
                               payload);
-    lgain = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    lgain = hdAudioCommand(pDrvCtrl, cad, verb);
 
     payload = HDA_CMD_GET_AMP_GAIN_MUTE_OUTPUT | HDA_CMD_GET_AMP_GAIN_MUTE_RIGHT;
-    verb = vxbHdAudioFormVerb(cad, nid,
+    verb = hdAudioFormVerb(cad, nid,
                               HDA_CMD_VERB_GET_AMP_GAIN_MUTE,
                               payload);
-    rgain = vxbHdAudioCommand(pDrvCtrl, cad, verb);
+    rgain = hdAudioCommand(pDrvCtrl, cad, verb);
     
     
     printf ("widget output  amp:   0x%x : 0x%x\n", lgain, rgain);
@@ -1101,11 +1100,11 @@ void vxbHdAudioShowAmp(NEW_HDA_DRV_CTRL* pDrvCtrl, cad_t cad, nid_t nid, int ver
     }
 
 
-int vxbHdVerb (nid_t nid, UINT32 verb, UINT16 arg)
+int hdVerb (nid_t nid, UINT32 verb, UINT16 arg)
     {
-    verb = vxbHdAudioFormVerb(0, nid,
+    verb = hdAudioFormVerb(0, nid,
                               verb,
                               arg);
-    return(vxbHdAudioCommand(global_controller, 0, verb));
+    return(hdAudioCommand(global_controller, 0, verb));
     }
 

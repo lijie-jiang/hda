@@ -17,8 +17,6 @@ modification history
 #ifndef __INChdAudioh
 #define __INChdAudioh
 
-extern void vxbHdAudioRegister (void);
-
 
 #define VIA_VX900_DEVICE_ID 0x3288
 #define VIA_VENDOR_ID   0x1106
@@ -63,19 +61,19 @@ typedef int cad_t;
 typedef struct hdcodec_t* HDCODEC_ID;
 
 
-#define VXB_HDA_MSG_TYPE_UNLINK 1
-#define VXB_HDA_MSG_TYPE_UNSOLQ 2
+#define HDA_MSG_TYPE_UNLINK 1
+#define HDA_MSG_TYPE_UNSOLQ 2
 
-typedef struct vxbHdaMsg
+typedef struct hdaMsg
     {
     int                 type;
-    } VXB_HDA_MSG;
+    } HDA_MSG;
 
-#define VXB_HDA_MSG_SIZE sizeof(VXB_HDA_MSG)
+#define HDA_MSG_SIZE sizeof(HDA_MSG)
 
 typedef struct dma_object_t {
-        VXB_DMA_TAG_ID      dma_tag;
-        VXB_DMA_MAP_ID      dma_map;
+        DMA_TAG_ID      dma_tag;
+        DMA_MAP_ID      dma_map;
         bus_addr_t          dma_paddr;
         bus_size_t          dma_size;
         caddr_t             dma_vaddr;
@@ -327,8 +325,8 @@ typedef struct hdaDrvCtrl
 
     int                 num_codec;
     HDCODEC_ID          codec_table[HDAC_CODEC_NUM_MAX];
-    VXB_DMA_TAG_ID      sndbuf_dma_tag;
-    VXB_DMA_TAG_ID      parentTag;
+    DMA_TAG_ID      sndbuf_dma_tag;
+    DMA_TAG_ID      parentTag;
     } HDA_DRV_CTRL;
 
 #define device_get_softc()   gHdaDrvCtrl

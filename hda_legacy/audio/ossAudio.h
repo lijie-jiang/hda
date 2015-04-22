@@ -56,8 +56,8 @@ typedef struct snd_buf
     caddr_t             buf;
     int                 head;
     int                 tail;
-    VXB_DMA_TAG_ID      dma_tag;
-    VXB_DMA_MAP_ID      dma_map;
+    DMA_TAG_ID          dma_tag;
+    DMA_MAP_ID          dma_map;
     int                 dma_flags;
     void               *buf_addr;
     void               *shadow_buf_addr;
@@ -169,7 +169,7 @@ extern int ossmixer_setrecsrc (SND_MIXER *m, unsigned int src);
 extern int ossmixer_set (SND_MIXER *m, unsigned int dev, unsigned int level);
 extern int ossmixer_get (SND_MIXER *m, unsigned int dev);
 
-extern STATUS sndbuf_alloc (SND_BUF *b, VXB_DMA_TAG_ID dmatag, int dmaflags, unsigned int size);
+extern STATUS sndbuf_alloc (SND_BUF *b, DMA_TAG_ID dmatag, int dmaflags, unsigned int size);
 extern STATUS sndbuf_resize(SND_BUF *b, unsigned int blkcnt, unsigned int blksz);
 extern SND_BUF* sndbuf_create(struct pcm_channel *channel);
 extern void sndbuf_destroy(SND_BUF *b);

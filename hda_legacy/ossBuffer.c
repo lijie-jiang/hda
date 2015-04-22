@@ -31,7 +31,7 @@ modification history
 #include "audio/dmaBufLib.h"
 #include "audio/ossAudio.h"
 
-STATUS sndbuf_alloc (SND_BUF *b, VXB_DMA_TAG_ID dmatag, int dmaflags, unsigned int size)
+STATUS sndbuf_alloc (SND_BUF *b, DMA_TAG_ID dmatag, int dmaflags, unsigned int size)
     {
     STATUS status = ERROR;
 
@@ -41,18 +41,18 @@ STATUS sndbuf_alloc (SND_BUF *b, VXB_DMA_TAG_ID dmatag, int dmaflags, unsigned i
     b->head = 0;
     b->tail = 0;
 
-    if ((b->buf_addr = vxbDmaBufMemAlloc (b->dma_tag,
+    if ((b->buf_addr = dmaBufMemAlloc (b->dma_tag,
                            NULL,
                            b->dma_flags,
                            &b->dma_map)) == NULL)
         return status;
 
-    if (vxbDmaBufMapLoad(b->dma_tag,
+    if (dmaBufMapLoad(b->dma_tag,
                          b->dma_map,
                          b->buf_addr,
                          b->bufsize, 0) == ERROR)
         {
-        vxbDmaBufMemFree (b->dma_tag, b->buf_addr, b->dma_map);
+        dmaBufMemFree (b->dma_tag, b->buf_addr, b->dma_map);
         return status;
         }
 
@@ -89,10 +89,10 @@ void sndbuf_free(SND_BUF *b)
 	if (b->buf_addr)
         {
         if (b->dma_map)
-            vxbDmaBufMapUnload (b->dma_tag, b->dma_map);
+            dmaBufMapUnload (b->dma_tag, b->dma_map);
 
         if (b->dma_tag)
-            vxbDmaBufMemFree (b->dma_tag, b->buf_addr, b->dma_map);
+            dmaBufMemFree (b->dma_tag, b->buf_addr, b->dma_map);
         }
     if(b->shadow_buf_addr)
         free(b->shadow_buf_addr);
