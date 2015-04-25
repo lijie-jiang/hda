@@ -369,9 +369,23 @@ LOCAL ssize_t ossAudioWrite (void * pFileDesc, char * buffer, size_t  maxBytes)
     int    i;
     int     newBytes;
     
-#   define OSS_READ8   {val = ( ( (unsigned char)(buffer[i])-0x80 ) <<8 ),i++;}
-#   define OSS_READ16  {val = (buffer[i] &0xFF) | ((buffer[i+1]<<8)); i+=2;}    
-#   define OSS_WRITE16 {*ptr = val; ptr++;}     
+#   define OSS_READ8 \
+    do  { \
+        val = ( ( (unsigned char)(buffer[i])-0x80 ) <<8 ); \
+        i++; \
+        } while(FALSE)
+
+#   define OSS_READ16 \
+    do  { \
+        val = (buffer[i] &0xFF) | ((buffer[i+1]<<8)); \
+        i+=2; \
+        } while(FALSE)
+
+#   define OSS_WRITE16 \
+    do  { \
+        *ptr = val; \
+        ptr++; \
+        } while(FALSE)
 
     newBytes = maxBytes;
     if (pChan->afmt == AFMT_U8 )
@@ -397,15 +411,13 @@ LOCAL ssize_t ossAudioWrite (void * pFileDesc, char * buffer, size_t  maxBytes)
     for (i=0; i<maxBytes; )
         {
 	    if (pChan->afmt == AFMT_U8 )
-	    	OSS_READ8
+	    	OSS_READ8;
 	    else
 	    	OSS_READ16;
 	    
 	    OSS_WRITE16;
     	if ( pChan->channels == 1  )
-            {
     	    OSS_WRITE16;
-            }
         }
 
 #   undef OSS_READ8
