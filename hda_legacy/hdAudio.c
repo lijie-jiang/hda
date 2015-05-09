@@ -53,6 +53,8 @@
 #include "audio/dmaBufLib.h"
 
 #define HDA_DBG_ON
+#undef  HDA_DBG_ON
+
 #ifdef  HDA_DBG_ON
 
 #include <logLib.h>
@@ -2069,6 +2071,8 @@ int channel_setformat(PCM_CHANNEL *chan, UINT32 format)
     else
     	format |= (chan->channels << 20);
 #if 0
+    HDA_DBG(HDA_DBG_INFO, "channel = %d, format = 0x%x\n", chan->channels, format);
+
     for (i = 0; ch->caps.fmtlist[i] != 0; i++)
         {
         printf("%s: fmtlist= x%08x\n", (int)__func__,ch->caps.fmtlist[i]);

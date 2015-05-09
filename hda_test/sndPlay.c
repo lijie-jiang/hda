@@ -87,6 +87,7 @@ wait on write to device.
 LOCAL BOOL exitFlag = FALSE;
 LOCAL BOOL pauseFlag = FALSE;
 LOCAL SEM_ID pauseSem  = NULL;
+LOCAL UINT32 filePercent = 100;
 
 STATUS soundPlay (char *);
 
@@ -126,7 +127,14 @@ STATUS soundPlay
     UINT32 samplerate, samples;
     volatile UINT32 datastart;
     audio_buf_info     info;
-#define SET_DEFAULT_VOL
+    int file_size; 
+    int stream_size;
+    int stream_start;
+
+#undef  SET_DEFAULT_VOL
+
+    #define SET_DEFAULT_VOL
+
 #ifdef SET_DEFAULT_VOL
     unsigned int vol_level = 60; /* percent value of maximum vloume */
     unsigned int maxVol = (vol_level << 8) | vol_level;
@@ -151,6 +159,9 @@ STATUS soundPlay
         printf ("Error opening file %s\n", filename);
         goto play_err;
         }
+
+    /* retrieve file size */
+    file_size = lseek(fd, 0, SEEK_END);
 
     /* Assume a wav file and read the wav form header file */
     if (wavHeaderRead (fd, &channels, &samplerate, &samplebits, 
@@ -222,6 +233,11 @@ STATUS soundPlay
     printf ("samples:     %d\n", (int)samples);
     printf ("total size:  %d\n", size);
 
+    /* get stream size */
+    stream_size = size;
+    stream_start = file_size - size;
+    printf("stream_start = %d\n", stream_start);
+
 #ifdef SET_DEFAULT_VOL
     /* Although the mixer has default volume settings, lets set the
      * volume for both channels to max
@@ -287,6 +303,7 @@ STATUS soundPlay
         {
         int leftover;
 
+        /* Pause */
         if (pauseFlag)
             {
             close(sd);
@@ -299,10 +316,36 @@ STATUS soundPlay
             ioctl (sd, SNDCTL_DSP_SETFRAGMENT, (int)&blockSize2);
             }
 
+        /* Exit playback */
         if (exitFlag)
             {
             exitFlag = FALSE;
             goto play_exit;
+            }
+
+        /* Set playback position */
+        if (filePercent < 100)
+            {
+            long cur_position = (stream_size * filePercent) / 100;
+
+            cur_position = blockSize * (cur_position / blockSize);
+            size = stream_size - cur_position;
+            lseek(fd, (cur_position + stream_start), SEEK_SET);
+#if 0
+            printf("cur_position = %d\n", cur_position);
+            printf("size = %d\n", size);
+            printf("lseek= %d\n", lseek(fd, (cur_position + stream_start), SEEK_SET));
+#endif
+            filePercent = 100;
+
+            /* re-send audio stream */
+            close(sd);
+            sd = open (AUDIO_DEVICE, O_WRONLY, 0666);
+            ioctl (sd, SNDCTL_DSP_CHANNELS, (int)&channels);
+            ioctl (sd, SNDCTL_DSP_SPEED, (int)&samplerate);
+            ioctl (sd, SNDCTL_DSP_SETFMT, (int)&format);
+            blockSize2 = (4 << 16) | 12;
+            ioctl (sd, SNDCTL_DSP_SETFRAGMENT, (int)&blockSize2);
             }
         
         /* If the audio stream has more than the block size, then
@@ -423,3 +466,8 @@ void soundExit(void)
     exitFlag = TRUE;
     }
 
+void soundPosition(UINT32 percent)
+    {
+    filePercent = percent;
+    }
+    
